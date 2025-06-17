@@ -1,5 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../models/qr_model.dart';
 import '../database/database_helper.dart';
 
@@ -13,6 +21,7 @@ class QRListScreen extends StatefulWidget {
 class _QRListScreenState extends State<QRListScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   List<QRModel> _qrCodes = [];
+  final Set<QRModel> _selectedQRs = {};
 
   @override
   void initState() {
@@ -24,7 +33,85 @@ class _QRListScreenState extends State<QRListScreen> {
     final qrCodes = await _dbHelper.getQRLogs();
     setState(() {
       _qrCodes = qrCodes.where((qr) => !qr.email.contains('error@')).toList();
+      _selectedQRs.clear();
     });
+  }
+
+  void _toggleSelection(QRModel qr) {
+    setState(() {
+      if (_selectedQRs.contains(qr)) {
+        _selectedQRs.remove(qr);
+      } else {
+        _selectedQRs.add(qr);
+      }
+    });
+  }
+
+  String _encodeQRData(QRModel qr) {
+    return qr.id;
+  }
+
+  Future<void> generatePDFWithQRImages() async {
+    if (_selectedQRs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one QR code')),
+      );
+      return;
+    }
+
+    final pdf = pw.Document();
+
+    for (final qr in _selectedQRs) {
+      final qrPainter = QrPainter(
+        data: qr.id,
+        version: QrVersions.auto,
+        gapless: true,
+        color: Colors.black,
+        emptyColor: Colors.white,
+      );
+
+      final picData = await qrPainter.toImageData(
+        300,
+        format: ui.ImageByteFormat.png,
+      );
+      final image = pw.MemoryImage(picData!.buffer.asUint8List());
+
+      pdf.addPage(
+        pw.Page(
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Center(child: pw.Image(image, width: 150, height: 150)),
+                pw.SizedBox(height: 10),
+                pw.Text("ID: ${qr.id}"),
+                pw.Text("Name: ${qr.name}"),
+                pw.Text("Email: ${qr.email}"),
+                pw.Text("Grade Section: ${qr.gradeSection}"),
+                pw.Divider(),
+              ],
+            );
+          },
+        ),
+      );
+    }
+
+    var status = await Permission.storage.request();
+    if (!status.isGranted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Storage permission is required')),
+      );
+      return;
+    }
+
+    final directory = await getApplicationDocumentsDirectory();
+    final path = "${directory!.path}/qr_list.pdf";
+    final file = File(path);
+    await file.writeAsBytes(await pdf.save());
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('PDF saved to $path')));
   }
 
   Future<void> _showEditDialog(QRModel qr) async {
@@ -80,9 +167,7 @@ class _QRListScreenState extends State<QRListScreen> {
                 'Cancel',
                 style: TextStyle(color: Colors.black),
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: const Text('Save', style: TextStyle(color: Colors.black)),
@@ -94,9 +179,20 @@ class _QRListScreenState extends State<QRListScreen> {
                     email: emailController.text,
                     gradeSection: gradeSectionController.text,
                   );
-                  await _dbHelper.insertQRLog(updatedQR);
-                  await _loadQRCodes();
-                  Navigator.of(context).pop();
+                  try {
+                    await _dbHelper.updateQRLog(updatedQR);
+                    await _loadQRCodes();
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('QR code updated successfully'),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to update QR code: $e')),
+                    );
+                  }
                 }
               },
             ),
@@ -127,9 +223,7 @@ class _QRListScreenState extends State<QRListScreen> {
                 'Cancel',
                 style: TextStyle(color: Colors.black),
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: const Text(
@@ -137,12 +231,20 @@ class _QRListScreenState extends State<QRListScreen> {
                 style: TextStyle(color: Colors.black),
               ),
               onPressed: () async {
-                await _dbHelper.database.then(
-                  (db) =>
-                      db.delete('qr_logs', where: 'id = ?', whereArgs: [qr.id]),
-                );
-                await _loadQRCodes();
-                Navigator.of(context).pop();
+                try {
+                  await _dbHelper.deleteQRLog(qr.id);
+                  await _loadQRCodes();
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('QR code deleted successfully'),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to delete QR code: $e')),
+                  );
+                }
               },
             ),
           ],
@@ -151,15 +253,20 @@ class _QRListScreenState extends State<QRListScreen> {
     );
   }
 
-  String _encodeQRData(QRModel qr) {
-    // Encode as delimited string: id|name|email|gradeSection
-    return '${qr.id}|${qr.name}|${qr.email}|${qr.gradeSection}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('QR Code List')),
+      appBar: AppBar(
+        title: const Text('QR Code List'),
+        actions: [
+          if (_selectedQRs.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.print, color: Colors.white),
+              tooltip: 'Export PDF',
+              onPressed: generatePDFWithQRImages,
+            ),
+        ],
+      ),
       body:
           _qrCodes.isEmpty
               ? const Center(
@@ -173,6 +280,7 @@ class _QRListScreenState extends State<QRListScreen> {
                 itemCount: _qrCodes.length,
                 itemBuilder: (context, index) {
                   final qr = _qrCodes[index];
+                  final isSelected = _selectedQRs.contains(qr);
                   return Card(
                     color: Colors.white,
                     elevation: 2,
@@ -185,7 +293,13 @@ class _QRListScreenState extends State<QRListScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // QR Code Image
+                          Checkbox(
+                            value: isSelected,
+                            onChanged: (bool? value) {
+                              _toggleSelection(qr);
+                            },
+                            activeColor: Colors.black,
+                          ),
                           SizedBox(
                             width: 100,
                             height: 100,
@@ -197,7 +311,6 @@ class _QRListScreenState extends State<QRListScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          // Details and Buttons
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,6 +323,7 @@ class _QRListScreenState extends State<QRListScreen> {
                                     fontSize: 16,
                                   ),
                                 ),
+
                                 const SizedBox(height: 4),
                                 Text(
                                   'Email: ${qr.email}',
@@ -219,7 +333,6 @@ class _QRListScreenState extends State<QRListScreen> {
                                   'Grade: ${qr.gradeSection}',
                                   style: const TextStyle(color: Colors.black),
                                 ),
-                                const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [

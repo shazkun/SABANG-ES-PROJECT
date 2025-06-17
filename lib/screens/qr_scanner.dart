@@ -3,6 +3,7 @@ import 'package:mailer/mailer.dart' as mailer;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/qr_model.dart';
 import '../database/database_helper.dart';
 import 'package:uuid/uuid.dart';
@@ -17,12 +18,26 @@ class QRScanScreen extends StatefulWidget {
 class _QRScanScreenState extends State<QRScanScreen> {
   MobileScannerController cameraController = MobileScannerController();
   final Map<String, DateTime> _scanCooldowns = {};
-  final Map<String, bool> _dialogShown = {};
   static const int _cooldownSeconds = 10;
-  bool _isDialogOpen = false;
+  String? savedEmail;
+  String? savedCode;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSavedData();
+  }
+
+  Future<void> loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      savedEmail = prefs.getString('email');
+      savedCode = prefs.getString('code');
+    });
+  }
 
   Future<void> _sendEmail(String recipientEmail, String name) async {
-    final smtpServer = gmail('seanwiltonr@gmail.com', 'utfn xubd cnkf bdxs');
+    final smtpServer = gmail(savedEmail!, savedCode!);
     final message =
         Message()
           ..from = mailer.Address('your-email@gmail.com', 'QR Scanner')
@@ -51,9 +66,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
   }
 
   Future<void> _showDialog(String title, String message) async {
-    if (_isDialogOpen) return; // Prevent multiple dialogs
-    _isDialogOpen = true;
-    await showDialog<void>(
+    return showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -78,12 +91,11 @@ class _QRScanScreenState extends State<QRScanScreen> {
         );
       },
     );
-    _isDialogOpen = false;
   }
 
   Future<void> _processQRCode(String rawValue) async {
     try {
-      // Log raw value for debugging (only once per scan attempt)
+      // Log raw value for debugging
       await DatabaseHelper().insertQRLog(
         QRModel(
           id: const Uuid().v4(),
@@ -126,27 +138,13 @@ class _QRScanScreenState extends State<QRScanScreen> {
         final now = DateTime.now();
         final difference = now.difference(lastScan).inSeconds;
         if (difference < _cooldownSeconds) {
-          // Show cooldown dialog only if not already shown for this ID
-          if (_dialogShown[id] != true) {
-            _dialogShown[id] = true;
-            await _showDialog(
-              'Cooldown',
-              'This QR code was recently scanned. Please wait ${(_cooldownSeconds - difference)} seconds.',
-            );
-            // Schedule dialog flag reset after cooldown
-            Future.delayed(
-              Duration(seconds: _cooldownSeconds - difference),
-              () {
-                _dialogShown.remove(id);
-              },
-            );
-          }
+          await _showDialog(
+            'Cooldown',
+            'This QR code was recently scanned. Please wait ${(_cooldownSeconds - difference)} seconds.',
+          );
           return;
         }
       }
-
-      // Clear dialog flag if cooldown has expired
-      _dialogShown.remove(id);
 
       // Log successful scan to database
       await DatabaseHelper().insertQRLog(
@@ -159,6 +157,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
       // Send email using extracted email as recipient
       await _sendEmail(email, name);
     } catch (e) {
+      // Log failed scan attempt with error details
       await DatabaseHelper().insertQRLog(
         QRModel(
           id: const Uuid().v4(),
@@ -167,6 +166,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
           gradeSection: 'Scan Error: $e',
         ),
       );
+
       await _showDialog('Error', 'Invalid QR code: $e');
     }
   }

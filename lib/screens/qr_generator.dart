@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:uuid/uuid.dart';
-
-import '../database/database_helper.dart';
 import '../models/qr_model.dart';
+import '../database/database_helper.dart';
 
 class QRGenerateScreen extends StatefulWidget {
   const QRGenerateScreen({super.key});
@@ -43,7 +42,6 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
   }
 
   String _encodeQRData(QRModel qr) {
-    // Encode as delimited string: id|name|email|gradeSection
     return '${qr.id}|${qr.name}|${qr.email}|${qr.gradeSection}';
   }
 

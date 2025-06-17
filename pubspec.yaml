@@ -39,8 +39,11 @@ dependencies:
   csv: ^5.0.0
   uuid: ^3.0.7
   sqflite_common_ffi: ^2.3.6
-
   cupertino_icons: ^1.0.8
+  pdf: ^3.10.4
+  path_provider: ^2.1.2
+  permission_handler: ^11.3.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

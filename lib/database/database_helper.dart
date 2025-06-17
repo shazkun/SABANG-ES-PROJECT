@@ -1,6 +1,5 @@
-import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-
+import 'package:path/path.dart';
 import '../models/qr_model.dart';
 
 class DatabaseHelper {
@@ -8,7 +7,7 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
   DatabaseHelper._internal();
 
-  static Database? _database;
+  Database? _database;
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -27,8 +26,7 @@ class DatabaseHelper {
             id TEXT PRIMARY KEY,
             name TEXT,
             email TEXT,
-            gradeSection TEXT,
-            timestamp TEXT
+            gradeSection TEXT
           )
         ''');
       },
@@ -37,15 +35,46 @@ class DatabaseHelper {
 
   Future<void> insertQRLog(QRModel qr) async {
     final db = await database;
-    await db.insert('qr_logs', {
-      ...qr.toJson(),
-      'timestamp': DateTime.now().toIso8601String(),
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    print('Inserting QRLog: ${qr.toMap()}'); // Debug log
+    await db.insert(
+      'qr_logs',
+      qr.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<QRModel>> getQRLogs() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('qr_logs');
-    return List.generate(maps.length, (i) => QRModel.fromJson(maps[i]));
+    print('Fetched QRLogs: $maps'); // Debug log
+    return List.generate(maps.length, (i) {
+      return QRModel.fromMap(maps[i]);
+    });
+  }
+
+  Future<void> updateQRLog(QRModel qr) async {
+    final db = await database;
+    print('Updating QRLog: ${qr.toMap()}'); // Debug log
+    int rowsAffected = await db.update(
+      'qr_logs',
+      qr.toMap(),
+      where: 'id = ?',
+      whereArgs: [qr.id],
+    );
+    print('Rows affected by update: $rowsAffected'); // Debug log
+    if (rowsAffected == 0) {
+      print('No rows updated for ID: ${qr.id}');
+    }
+  }
+
+  Future<void> deleteQRLog(String id) async {
+    final db = await database;
+    print('Deleting QRLog with ID: $id'); // Debug log
+    int rowsAffected = await db.delete(
+      'qr_logs',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    print('Rows affected by delete: $rowsAffected'); // Debug log
   }
 }

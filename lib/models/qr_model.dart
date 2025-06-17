@@ -1,17 +1,17 @@
 class QRModel {
-  final String? id;
+  final String id;
   final String name;
   final String email;
   final String gradeSection;
 
   QRModel({
-    this.id,
+    required this.id,
     required this.name,
     required this.email,
     required this.gradeSection,
   });
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
       'id': id,
       'name': name,
@@ -20,12 +20,12 @@ class QRModel {
     };
   }
 
-  factory QRModel.fromJson(Map<String, dynamic> json) {
+  factory QRModel.fromMap(Map<String, dynamic> map) {
     return QRModel(
-      id: json['id'],
-      name: json['name'],
-      email: json['email'],
-      gradeSection: json['gradeSection'],
+      id: map['id'] as String,
+      name: map['name'] as String,
+      email: map['email'] as String,
+      gradeSection: map['gradeSection'] as String,
     );
   }
 }
