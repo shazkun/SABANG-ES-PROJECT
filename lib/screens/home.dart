@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sabang_es/screens/qr_generator.dart';
-import 'package:sabang_es/screens/qr_import.dart';
-import 'package:sabang_es/screens/qr_scanner.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,36 +15,30 @@ class HomeScreen extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QRGenerateScreen(),
-                  ),
-                );
+                Navigator.pushNamed(context, '/generate');
               },
               child: const Text('Generate QR Code'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const QRScanScreen()),
-                );
+                Navigator.pushNamed(context, '/scan');
               },
               child: const Text('Scan QR Code'),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BulkImportScreen(),
-                  ),
-                );
+                Navigator.pushNamed(context, '/bulk-import');
               },
               child: const Text('Bulk Import'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/list');
+              },
+              child: const Text('View QR Codes'),
             ),
           ],
         ),

@@ -1,9 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:sabang_es/screens/home_screen.dart';
+import 'package:sabang_es/screens/home.dart';
 import 'package:sabang_es/screens/qr_generator.dart';
 import 'package:sabang_es/screens/qr_import.dart';
+import 'package:sabang_es/screens/qr_list.dart';
 import 'package:sabang_es/screens/qr_scanner.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
         '/generate': (context) => const QRGenerateScreen(),
         '/scan': (context) => const QRScanScreen(),
         '/bulk-import': (context) => const BulkImportScreen(),
+        '/list': (context) => const QRListScreen(),
       },
     );
   }
