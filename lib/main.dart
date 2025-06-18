@@ -5,7 +5,6 @@ import 'package:sabang_es/screens/home.dart';
 import 'package:sabang_es/screens/qr_generator.dart';
 import 'package:sabang_es/screens/qr_list.dart';
 import 'package:sabang_es/screens/qr_scanner.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'database/database_helper.dart';
@@ -13,8 +12,8 @@ import 'database/database_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    sqfliteFfiInit(); 
-    databaseFactory = databaseFactoryFfi; 
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
   }
   await DatabaseHelper().initDatabase();
 
@@ -29,7 +28,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'QR Manager',
       theme: ThemeData(
-        primaryColor: Colors.black,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.black,
+          brightness: Brightness.light,
+        ),
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
