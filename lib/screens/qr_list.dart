@@ -48,7 +48,7 @@ class _QRListScreenState extends State<QRListScreen> {
   }
 
   String _encodeQRData(QRModel qr) {
-    return qr.id;
+    return '${qr.id}|${qr.name}|${qr.email}|${qr.gradeSection}';
   }
 
   Future<void> generatePDFWithQRImages() async {

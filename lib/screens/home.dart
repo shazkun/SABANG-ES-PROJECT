@@ -30,6 +30,7 @@ class HomeScreen extends StatelessWidget {
                               labelText: 'Email',
                             ),
                           ),
+                          SizedBox(height: 15),
                           TextField(
                             controller: codeController,
                             decoration: const InputDecoration(
@@ -83,13 +84,7 @@ class HomeScreen extends StatelessWidget {
               },
               child: const Text('Scan QR Code'),
             ),
-            const SizedBox(height: 16),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.pushNamed(context, '/bulk-import');
-            //   },
-            //   child: const Text('Bulk Import'),
-            // ),
+
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {

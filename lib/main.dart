@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:sabang_es/screens/home.dart';
 import 'package:sabang_es/screens/qr_generator.dart';
-import 'package:sabang_es/screens/qr_import.dart';
 import 'package:sabang_es/screens/qr_list.dart';
 import 'package:sabang_es/screens/qr_scanner.dart';
 import 'package:sqflite/sqflite.dart';
@@ -14,8 +13,8 @@ import 'database/database_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-    sqfliteFfiInit(); // Initialize FFI
-    databaseFactory = databaseFactoryFfi; // Set the global database factory
+    sqfliteFfiInit(); 
+    databaseFactory = databaseFactoryFfi; 
   }
   await DatabaseHelper().initDatabase();
 
@@ -68,7 +67,6 @@ class MyApp extends StatelessWidget {
         '/': (context) => const HomeScreen(),
         '/generate': (context) => const QRGenerateScreen(),
         '/scan': (context) => const QRScanScreen(),
-        '/bulk-import': (context) => const BulkImportScreen(),
         '/list': (context) => const QRListScreen(),
       },
     );

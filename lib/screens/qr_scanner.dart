@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mailer/mailer.dart' as mailer;
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mailer/mailer.dart';
+import 'package:mailer/mailer.dart' as mailer;
 import 'package:mailer/smtp_server.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/qr_model.dart';
 import '../database/database_helper.dart';
@@ -18,7 +18,9 @@ class QRScanScreen extends StatefulWidget {
 class _QRScanScreenState extends State<QRScanScreen> {
   MobileScannerController cameraController = MobileScannerController();
   final Map<String, DateTime> _scanCooldowns = {};
+  final Set<String> _processedQRs = {};
   static const int _cooldownSeconds = 10;
+  bool _isDialogOpen = false;
   String? savedEmail;
   String? savedCode;
 
@@ -37,6 +39,10 @@ class _QRScanScreenState extends State<QRScanScreen> {
   }
 
   Future<void> _sendEmail(String recipientEmail, String name) async {
+    if (savedEmail == null || savedCode == null) {
+      throw Exception('Email credentials not set');
+    }
+    await _showDialog('Success', 'Email sent successfully to $recipientEmail');
     final smtpServer = gmail(savedEmail!, savedCode!);
     final message =
         Message()
@@ -48,10 +54,6 @@ class _QRScanScreenState extends State<QRScanScreen> {
 
     try {
       await send(message, smtpServer);
-      await _showDialog(
-        'Success',
-        'Email sent successfully to $recipientEmail',
-      );
     } catch (e) {
       await DatabaseHelper().insertQRLog(
         QRModel(
@@ -66,7 +68,9 @@ class _QRScanScreenState extends State<QRScanScreen> {
   }
 
   Future<void> _showDialog(String title, String message) async {
-    return showDialog<void>(
+    if (_isDialogOpen) return;
+    _isDialogOpen = true;
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
@@ -91,10 +95,22 @@ class _QRScanScreenState extends State<QRScanScreen> {
         );
       },
     );
+    _isDialogOpen = false;
   }
 
   Future<void> _processQRCode(String rawValue) async {
     try {
+      // Extract ID for deduplication
+      final parts = rawValue.split('|');
+      if (parts.isEmpty || parts[0].isEmpty) {
+        throw const FormatException('Invalid QR code format');
+      }
+      final id = parts[0];
+
+      // Prevent processing the same QR code multiple times during processing
+      if (_processedQRs.contains(id)) return;
+      _processedQRs.add(id);
+
       // Log raw value for debugging
       await DatabaseHelper().insertQRLog(
         QRModel(
@@ -105,20 +121,15 @@ class _QRScanScreenState extends State<QRScanScreen> {
         ),
       );
 
-      // Check if rawValue is empty
+      // Validate QR code
       if (rawValue.isEmpty) {
         throw const FormatException('QR code contains no data');
       }
-
-      // Split the raw value by delimiter
-      final parts = rawValue.split('|');
       if (parts.length != 4) {
         throw const FormatException(
           'QR code must contain exactly 4 fields (id|name|email|gradeSection)',
         );
       }
-
-      // Validate fields
       if (parts[0].isEmpty ||
           parts[1].isEmpty ||
           parts[2].isEmpty ||
@@ -127,21 +138,21 @@ class _QRScanScreenState extends State<QRScanScreen> {
       }
 
       // Extract fields
-      final id = parts[0];
       final name = parts[1];
       final email = parts[2];
       final gradeSection = parts[3];
 
-      // Check cooldown
+      // Check cooldown before logging or sending email
+      final now = DateTime.now();
       if (_scanCooldowns.containsKey(id)) {
         final lastScan = _scanCooldowns[id]!;
-        final now = DateTime.now();
         final difference = now.difference(lastScan).inSeconds;
         if (difference < _cooldownSeconds) {
           await _showDialog(
             'Cooldown',
-            'This QR code was recently scanned. Please wait ${(_cooldownSeconds - difference)} seconds.',
+            'This QR code was recently scanned. Please wait ${_cooldownSeconds - difference} seconds.',
           );
+          _processedQRs.remove(id); // Allow retry after dialog
           return;
         }
       }
@@ -151,13 +162,10 @@ class _QRScanScreenState extends State<QRScanScreen> {
         QRModel(id: id, name: name, email: email, gradeSection: gradeSection),
       );
 
-      // Update cooldown
-      _scanCooldowns[id] = DateTime.now();
-
-      // Send email using extracted email as recipient
+      // Update cooldown and send email
+      _scanCooldowns[id] = now;
       await _sendEmail(email, name);
     } catch (e) {
-      // Log failed scan attempt with error details
       await DatabaseHelper().insertQRLog(
         QRModel(
           id: const Uuid().v4(),
@@ -166,7 +174,6 @@ class _QRScanScreenState extends State<QRScanScreen> {
           gradeSection: 'Scan Error: $e',
         ),
       );
-
       await _showDialog('Error', 'Invalid QR code: $e');
     }
   }
@@ -175,25 +182,69 @@ class _QRScanScreenState extends State<QRScanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Scan QR Code')),
-      body: MobileScanner(
-        controller: cameraController,
-        onDetect: (capture) {
-          final List<Barcode> barcodes = capture.barcodes;
-          for (final barcode in barcodes) {
-            if (barcode.rawValue != null) {
-              _processQRCode(barcode.rawValue!);
-            } else {
-              DatabaseHelper().insertQRLog(
-                QRModel(
-                  id: const Uuid().v4(),
-                  name: 'Unknown',
-                  email: 'scan_error@error.com',
-                  gradeSection: 'Scan Error: No data in QR code',
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Define scan window as a centered square (60% of the smaller dimension)
+          final scanSize =
+              constraints.maxWidth < constraints.maxHeight
+                  ? constraints.maxWidth * 0.6
+                  : constraints.maxHeight * 0.6;
+          final scanWindow = Rect.fromCenter(
+            center: Offset(constraints.maxWidth / 2, constraints.maxHeight / 2),
+            width: scanSize,
+            height: scanSize,
+          );
+
+          return Stack(
+            children: [
+              MobileScanner(
+                controller: cameraController,
+                scanWindow: scanWindow,
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  for (final barcode in barcodes) {
+                    if (barcode.rawValue != null) {
+                      _processQRCode(barcode.rawValue!);
+                    } else {
+                      DatabaseHelper().insertQRLog(
+                        QRModel(
+                          id: const Uuid().v4(),
+                          name: 'Unknown',
+                          email: 'scan_error@error.com',
+                          gradeSection: 'Scan Error: No data in QR code',
+                        ),
+                      );
+                      _showDialog('Error', 'No data found in QR code');
+                    }
+                  }
+                },
+              ),
+              // Overlay to highlight scan area
+              CustomPaint(
+                painter: ScannerOverlayPainter(scanWindow: scanWindow),
+                size: Size(constraints.maxWidth, constraints.maxHeight),
+              ),
+              // Instructions
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    color: Colors.black54,
+                    child: const Text(
+                      'Place QR code within the square',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
                 ),
-              );
-              _showDialog('Error', 'No data found in QR code');
-            }
-          }
+              ),
+            ],
+          );
         },
       ),
     );
@@ -204,4 +255,91 @@ class _QRScanScreenState extends State<QRScanScreen> {
     cameraController.dispose();
     super.dispose();
   }
+}
+
+// Custom painter for scanner overlay
+class ScannerOverlayPainter extends CustomPainter {
+  final Rect scanWindow;
+
+  ScannerOverlayPainter({required this.scanWindow});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final overlayPaint =
+        Paint()
+          ..color = Colors.black.withOpacity(0.6)
+          ..style = PaintingStyle.fill;
+
+    // Draw overlay excluding scan window
+    canvas.drawPath(
+      Path()
+        ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+        ..addRect(scanWindow)
+        ..fillType = PathFillType.evenOdd,
+      overlayPaint,
+    );
+
+    // Draw scan window border
+    final borderPaint =
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4.0;
+    canvas.drawRect(scanWindow, borderPaint);
+
+    // Draw corner markers
+    final cornerPaint =
+        Paint()
+          ..color = Colors.green
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 6.0;
+    const cornerLength = 20.0;
+    // Top-left
+    canvas.drawLine(
+      scanWindow.topLeft,
+      scanWindow.topLeft.translate(cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.topLeft,
+      scanWindow.topLeft.translate(0, cornerLength),
+      cornerPaint,
+    );
+    // Top-right
+    canvas.drawLine(
+      scanWindow.topRight,
+      scanWindow.topRight.translate(-cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.topRight,
+      scanWindow.topRight.translate(0, cornerLength),
+      cornerPaint,
+    );
+    // Bottom-left
+    canvas.drawLine(
+      scanWindow.bottomLeft,
+      scanWindow.bottomLeft.translate(cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.bottomLeft,
+      scanWindow.bottomLeft.translate(0, -cornerLength),
+      cornerPaint,
+    );
+    // Bottom-right
+    canvas.drawLine(
+      scanWindow.bottomRight,
+      scanWindow.bottomRight.translate(-cornerLength, 0),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      scanWindow.bottomRight,
+      scanWindow.bottomRight.translate(0, -cornerLength),
+      cornerPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
