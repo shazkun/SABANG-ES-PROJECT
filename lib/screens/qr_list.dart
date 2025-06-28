@@ -194,11 +194,13 @@ class _QRListScreenState extends State<QRListScreen> {
                                         Icons.delete,
                                         color: Colors.redAccent,
                                       ),
-                                      onPressed:
-                                          () => _functions.showDeleteDialog(
-                                            context,
-                                            qr,
-                                          ),
+                                      onPressed: () async {
+                                        await _functions.showDeleteDialog(
+                                          context,
+                                          qr,
+                                          setState, // make sure to pass setState if needed inside dialog
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),

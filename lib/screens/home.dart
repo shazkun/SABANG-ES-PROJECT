@@ -16,173 +16,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSavedData();
-  }
-
-  Future<void> _loadSavedData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      savedEmail = prefs.getString('email');
-      final encryptedCode = prefs.getString('code');
-      if (encryptedCode != null) {
-        savedCode = EncryptionHelper.decryptText(encryptedCode);
-      }
-    });
-  }
-
-  void _showSettingsDialog() {
-    final emailController = TextEditingController(text: savedEmail ?? '');
-    final codeController = TextEditingController(text: savedCode ?? '');
-
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(
-              savedEmail != null ? 'Update Info' : 'Enter Email and Code',
-              style: TextStyle(color: Colors.black),
-            ),
-            backgroundColor: Colors.white,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: emailController,
-                  style: TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: TextStyle(color: Colors.black),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: codeController,
-                  obscureText: true,
-                  style: TextStyle(color: Colors.black),
-                  decoration: InputDecoration(
-                    labelText: 'Code',
-                    labelStyle: TextStyle(color: Colors.black),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-              TextButton(
-                onPressed: _showCodeHelpDialog,
-                child: const Text(
-                  'How to Get Code',
-                  style: TextStyle(color: Color(0xFF1976D2)),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final email = emailController.text.trim();
-                  final code = codeController.text.trim();
-
-                  showDialog(
-                    context: context,
-                    builder:
-                        (context) => AlertDialog(
-                          title: const Text(
-                            'Confirm',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          backgroundColor: Color(0xFF1976D2),
-                          content: const Text(
-                            'Do you want to save this information?',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text(
-                                'No',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                            ElevatedButton(
-                              onPressed: () async {
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                final encryptedCode =
-                                    EncryptionHelper.encryptText(code);
-                                await prefs.setString('email', email);
-                                await prefs.setString('code', encryptedCode);
-                                Navigator.pop(context); // close confirm
-                                _loadSavedData(); // reload state
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF4CAF50),
-                              ),
-                              child: const Text(
-                                'Yes',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF4CAF50),
-                ),
-                child: const Text(
-                  'Save',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showCodeHelpDialog() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text(
-              'How to Get App Password',
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Color(0xFF1976D2),
-            content: const Text(
-              'To generate a code (App Password):\n\n'
-              '1. Go to your Google Account.\n'
-              '2. Open the "Security" tab.\n'
-              '3. Under "Signing in to Google", choose "App Passwords".\n'
-              '4. Sign in again if needed.\n'
-              '5. Select "Mail" as the app and your device, then click "Generate".\n'
-              '6. Copy the 16-digit code and paste it in the Code field.',
-              style: TextStyle(color: Colors.white),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK', style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-    );
   }
 
   @override
@@ -195,42 +28,41 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFF1976D2),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings, color: Colors.white),
-            onPressed: _showSettingsDialog,
-            tooltip: savedEmail != null ? 'Update Info' : 'Enter Info',
-          ),
-        ],
+        actions: [],
       ),
       body: Container(
         color: const Color(0xFFE0E0E0),
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 3,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 1,
+        child: ListView(
           children: [
-            _buildActionButton(
-              Icons.qr_code_scanner,
-              'Scan QR Code',
-              () => Navigator.pushNamed(context, '/scan'),
-            ),
+            // _buildActionButton(
+            //   Icons.qr_code_scanner,
+            //   'Scan QR Code',
+            //   () => Navigator.pushNamed(context, '/scan'),
+            // ),
+            const SizedBox(height: 10),
             _buildActionButton(
               Icons.remove_red_eye,
               'View QR Codes',
               () => Navigator.pushNamed(context, '/list'),
             ),
+            const SizedBox(height: 10),
             _buildActionButton(
               Icons.merge_type,
               'Generate QR Code',
               () => Navigator.pushNamed(context, '/generate'),
             ),
+            const SizedBox(height: 10),
             _buildActionButton(
               Icons.message,
               'Custom Message',
               () => Navigator.pushNamed(context, '/message'),
+            ),
+            const SizedBox(height: 10),
+            _buildActionButton(
+              Icons.settings,
+              'Email Settings',
+              () => Navigator.pushNamed(context, '/settings'),
             ),
           ],
         ),

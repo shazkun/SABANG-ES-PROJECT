@@ -7,6 +7,7 @@ import 'package:sabang_es/screens/message_custom.dart';
 import 'package:sabang_es/screens/qr_generator.dart';
 import 'package:sabang_es/screens/qr_list.dart';
 import 'package:sabang_es/screens/qr_scanner.dart';
+import 'package:sabang_es/screens/settings.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'database/database_helper.dart';
@@ -30,11 +31,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'QR Manager',
       theme: ThemeData(
+        fontFamily: 'Poppins', // Add this line
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.black,
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: const Color(0xFFE0E0E0),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
@@ -66,6 +68,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+
       initialRoute: '/',
       routes: {
         '/': (context) => const HomeScreen(),
@@ -73,6 +76,7 @@ class MyApp extends StatelessWidget {
         '/scan': (context) => const QRScanScreen(),
         '/list': (context) => const QRListScreen(),
         '/message': (context) => const CustomMessageScreen(),
+        '/settings': (context) => const SettingsPage(),
       },
     );
   }

@@ -43,19 +43,21 @@ class _CustomMessageScreenState extends State<CustomMessageScreen> {
       appBar: AppBar(
         title: const Text('Customize Email Messages'),
         backgroundColor: const Color(0xFF1976D2),
+        centerTitle: true,
+
+        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20), // Rounded edges
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
-                blurRadius: 8,
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
@@ -65,30 +67,78 @@ class _CustomMessageScreenState extends State<CustomMessageScreen> {
             children: [
               const Text(
                 'Use {name} and {datetime} as placeholders.',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: checkInController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Check-In Message',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Rounded edges
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 maxLines: 3,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: checkOutController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Check-Out Message',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12), // Rounded edges
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: saveMessages,
-                child: const Text('Save Messages'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.black.withOpacity(0.2),
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12), // Rounded edges
+                  ),
+                ).copyWith(
+                  backgroundColor: MaterialStateProperty.resolveWith(
+                    (states) => Colors.blueAccent,
+                  ),
+                  overlayColor: MaterialStateProperty.resolveWith(
+                    (states) => Colors.white.withOpacity(0.1),
+                  ),
+                ),
+
+                child: const Text(
+                  'Save Messages',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),

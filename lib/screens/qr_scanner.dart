@@ -260,7 +260,10 @@ class _QRScanScreenState extends State<QRScanScreen> {
               ),
               // Overlay to highlight scan area
               CustomPaint(
-                painter: ScannerOverlayPainter(scanWindow: scanWindow),
+                painter: ScannerOverlayPainter(
+                  scanWindow: scanWindow,
+                  _isCheckInMode,
+                ),
                 size: Size(constraints.maxWidth, constraints.maxHeight),
               ),
               // Instructions
@@ -301,8 +304,9 @@ class _QRScanScreenState extends State<QRScanScreen> {
 // Custom painter for scanner overlay
 class ScannerOverlayPainter extends CustomPainter {
   final Rect scanWindow;
+  final bool _isCheckInMode;
 
-  ScannerOverlayPainter({required this.scanWindow});
+  ScannerOverlayPainter(this._isCheckInMode, {required this.scanWindow});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -331,7 +335,7 @@ class ScannerOverlayPainter extends CustomPainter {
     // Draw corner markers
     final cornerPaint =
         Paint()
-          ..color = const Color.fromARGB(255, 209, 208, 136)
+          ..color = _isCheckInMode ? Colors.green : Colors.red
           ..style = PaintingStyle.stroke
           ..strokeWidth = 8.0;
     const cornerLength = 20.0;

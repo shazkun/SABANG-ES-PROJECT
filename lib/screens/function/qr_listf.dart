@@ -228,7 +228,11 @@ class QRListFunctions {
     );
   }
 
-  Future<void> showDeleteDialog(BuildContext context, QRModel qr) async {
+  Future<void> showDeleteDialog(
+    BuildContext context,
+    QRModel qr,
+    void Function(void Function()) setState,
+  ) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -273,10 +277,13 @@ class QRListFunctions {
                 try {
                   await _dbHelper.deleteQRLog(qr.id);
                   await loadQRCodes((qrCodes, selectedQRs) {
-                    this.qrCodes = qrCodes;
-                    this.selectedQRs = selectedQRs;
-                    filterQRCodes('');
+                    setState(() {
+                      this.qrCodes = qrCodes;
+                      this.selectedQRs = selectedQRs;
+                      filterQRCodes('');
+                    });
                   });
+
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
