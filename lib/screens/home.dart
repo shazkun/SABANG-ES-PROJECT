@@ -40,26 +40,58 @@ class _HomeScreenState extends State<HomeScreen> {
           (context) => AlertDialog(
             title: Text(
               savedEmail != null ? 'Update Info' : 'Enter Email and Code',
+              style: TextStyle(color: Colors.black),
             ),
+            backgroundColor: Colors.white,
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
+                  style: TextStyle(color: Colors.black),
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: TextStyle(color: Colors.black),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.black),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 15),
                 TextField(
                   controller: codeController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'Code'),
+                  style: TextStyle(color: Colors.black),
+                  decoration: InputDecoration(
+                    labelText: 'Code',
+                    labelStyle: TextStyle(color: Colors.black),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.black),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF4CAF50)),
+                    ),
+                  ),
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+              TextButton(
+                onPressed: _showCodeHelpDialog,
+                child: const Text(
+                  'How to Get Code',
+                  style: TextStyle(color: Color(0xFF1976D2)),
+                ),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -70,14 +102,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     context: context,
                     builder:
                         (context) => AlertDialog(
-                          title: const Text('Confirm'),
+                          title: const Text(
+                            'Confirm',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          backgroundColor: Color(0xFF1976D2),
                           content: const Text(
                             'Do you want to save this information?',
+                            style: TextStyle(color: Colors.white),
                           ),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('No'),
+                              child: const Text(
+                                'No',
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                             ElevatedButton(
                               onPressed: () async {
@@ -88,16 +128,57 @@ class _HomeScreenState extends State<HomeScreen> {
                                 await prefs.setString('email', email);
                                 await prefs.setString('code', encryptedCode);
                                 Navigator.pop(context); // close confirm
-
                                 _loadSavedData(); // reload state
                               },
-                              child: const Text('Yes'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF4CAF50),
+                              ),
+                              child: const Text(
+                                'Yes',
+                                style: TextStyle(color: Colors.white),
+                              ),
                             ),
                           ],
                         ),
                   );
                 },
-                child: const Text('Save'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF4CAF50),
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showCodeHelpDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text(
+              'How to Get App Password',
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Color(0xFF1976D2),
+            content: const Text(
+              'To generate a code (App Password):\n\n'
+              '1. Go to your Google Account.\n'
+              '2. Open the "Security" tab.\n'
+              '3. Under "Signing in to Google", choose "App Passwords".\n'
+              '4. Sign in again if needed.\n'
+              '5. Select "Mail" as the app and your device, then click "Generate".\n'
+              '6. Copy the 16-digit code and paste it in the Code field.',
+              style: TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -108,36 +189,80 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('QR Manager'),
+        centerTitle: true,
+        title: Text(
+          'Attendance Scanner',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF1976D2),
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: _showSettingsDialog,
             tooltip: savedEmail != null ? 'Update Info' : 'Enter Info',
           ),
         ],
       ),
-      body: Padding(
+      body: Container(
+        color: const Color(0xFFE0E0E0),
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: GridView.count(
+          crossAxisCount: 3,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 1,
           children: [
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/generate'),
-              child: const Text('Generate QR Code'),
+            _buildActionButton(
+              Icons.qr_code_scanner,
+              'Scan QR Code',
+              () => Navigator.pushNamed(context, '/scan'),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/scan'),
-              child: const Text('Scan QR Code'),
+            _buildActionButton(
+              Icons.remove_red_eye,
+              'View QR Codes',
+              () => Navigator.pushNamed(context, '/list'),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/list'),
-              child: const Text('View QR Codes'),
+            _buildActionButton(
+              Icons.merge_type,
+              'Generate QR Code',
+              () => Navigator.pushNamed(context, '/generate'),
+            ),
+            _buildActionButton(
+              Icons.message,
+              'Custom Message',
+              () => Navigator.pushNamed(context, '/message'),
             ),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, '/scan'),
+        backgroundColor: const Color(0xFF1976D2),
+        child: const Icon(Icons.qr_code_scanner, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        color: Colors.white,
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Color(0xFF1976D2), size: 30),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                style: TextStyle(color: Color(0xFF1976D2), fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:uuid/uuid.dart';
+import 'package:sabang_es/screens/function/qr_genf.dart';
+
 import '../models/qr_model.dart';
-import '../database/database_helper.dart';
 
 class QRGenerateScreen extends StatefulWidget {
   const QRGenerateScreen({super.key});
@@ -12,145 +12,212 @@ class QRGenerateScreen extends StatefulWidget {
 }
 
 class _QRGenerateScreenState extends State<QRGenerateScreen> {
+  final QRGenerateFunctions _functions = QRGenerateFunctions();
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _gradeSectionController = TextEditingController();
-  QRModel? _qrModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _functions.initControllers();
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _gradeSectionController.dispose();
+    _functions.dispose();
     super.dispose();
-  }
-
-  void _generateQR() async {
-    if (_formKey.currentState!.validate()) {
-      final qr = QRModel(
-        id: const Uuid().v4(),
-        name: _nameController.text,
-        email: _emailController.text,
-        gradeSection: _gradeSectionController.text,
-      );
-      await DatabaseHelper().insertQRLog(qr);
-      setState(() {
-        _qrModel = qr;
-      });
-    }
-  }
-
-  String _encodeQRData(QRModel qr) {
-    return '${qr.id}|${qr.name}|${qr.email}|${qr.gradeSection}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generate QR Code')),
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.blueAccent,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Generate QR Code',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator:
-                          (value) => value!.isEmpty ? 'Enter name' : null,
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _functions.nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          validator:
+                              (value) => value!.isEmpty ? 'Enter name' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _functions.emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          validator:
+                              (value) => value!.isEmpty ? 'Enter email' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _functions.gradeSectionController,
+                          decoration: InputDecoration(
+                            labelText: 'Grade Section',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          validator:
+                              (value) =>
+                                  value!.isEmpty ? 'Enter grade section' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (_formKey.currentState!.validate()) {
+                              await _functions.generateQR(context);
+                              setState(() {});
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'QR code generated successfully',
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: const Text(
+                            'Generate QR',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator:
-                          (value) => value!.isEmpty ? 'Enter email' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _gradeSectionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Grade Section',
-                      ),
-                      validator:
-                          (value) =>
-                              value!.isEmpty ? 'Enter grade section' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _generateQR,
-                      child: const Text('Generate QR'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              if (_qrModel != null) ...[
+              if (_functions.qrModel != null) ...[
                 const SizedBox(height: 24),
-                Center(
-                  child: QrImageView(
-                    data: _encodeQRData(_qrModel!),
-                    version: QrVersions.auto,
-                    size: 200.0,
-                    backgroundColor: Colors.white,
+                Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'QR Code Details:',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'ID: ${_qrModel!.id}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: QrImageView(
+                              data: _functions.encodeQRData(
+                                _functions.qrModel!,
+                              ),
+                              version: QrVersions.auto,
+                              size: 120.0,
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Name: ${_qrModel!.name}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Details',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Name: ${_functions.qrModel!.name}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Email: ${_functions.qrModel!.email}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Grade: ${_functions.qrModel!.gradeSection}',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Email: ${_qrModel!.email}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Grade Section: ${_qrModel!.gradeSection}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ],

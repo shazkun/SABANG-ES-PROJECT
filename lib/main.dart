@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:sabang_es/models/Message.dart';
 import 'package:sabang_es/screens/home.dart';
+import 'package:sabang_es/screens/message_custom.dart';
 import 'package:sabang_es/screens/qr_generator.dart';
 import 'package:sabang_es/screens/qr_list.dart';
 import 'package:sabang_es/screens/qr_scanner.dart';
@@ -70,6 +72,7 @@ class MyApp extends StatelessWidget {
         '/generate': (context) => const QRGenerateScreen(),
         '/scan': (context) => const QRScanScreen(),
         '/list': (context) => const QRListScreen(),
+        '/message': (context) => const CustomMessageScreen(),
       },
     );
   }

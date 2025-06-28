@@ -23,6 +23,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
   bool _isDialogOpen = false;
   String? savedEmail;
   String? savedCode;
+  bool _isCheckInMode = true;
 
   @override
   void initState() {
@@ -42,18 +43,37 @@ class _QRScanScreenState extends State<QRScanScreen> {
     if (savedEmail == null || savedCode == null) {
       throw Exception('Email credentials not set');
     }
-    await _showDialog('Success', 'Email sent successfully to $recipientEmail');
+
+    final prefs = await SharedPreferences.getInstance();
+    final checkInMsg =
+        prefs.getString('checkInMessage') ??
+        'Hello {name}, your QR code was scanned for check-in at {datetime}.';
+    final checkOutMsg =
+        prefs.getString('checkOutMessage') ??
+        'Hello {name}, your QR code was scanned for check-out at {datetime}.';
+
+    final nowStr = DateTime.now().toString();
+    final messageText = (_isCheckInMode ? checkInMsg : checkOutMsg)
+        .replaceAll('{name}', name)
+        .replaceAll('{datetime}', nowStr);
+
     final smtpServer = gmail(savedEmail!, savedCode!);
     final message =
         Message()
           ..from = mailer.Address('your-email@gmail.com', 'QR Scanner')
           ..recipients.add(recipientEmail)
-          ..subject = 'QR Scan Notification'
-          ..text =
-              'Hello $name, your QR code was scanned at ${DateTime.now()}.';
+          ..subject =
+              _isCheckInMode
+                  ? 'QR Check-In Notification'
+                  : 'QR Check-Out Notification'
+          ..text = messageText;
 
     try {
       await send(message, smtpServer);
+      await _showDialog(
+        'Success',
+        'Email sent successfully to $recipientEmail',
+      );
     } catch (e) {
       await DatabaseHelper().insertQRLog(
         QRModel(
@@ -181,7 +201,26 @@ class _QRScanScreenState extends State<QRScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan QR Code')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('Scan QR Code'),
+        actions: [
+          Row(
+            children: [
+              Switch(
+                value: _isCheckInMode,
+                onChanged: (value) {
+                  setState(() {
+                    _isCheckInMode = value;
+                  });
+                },
+                activeColor: Colors.green,
+                inactiveThumbColor: Colors.red,
+              ),
+            ],
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           // Define scan window as a centered square (60% of the smaller dimension)
@@ -226,7 +265,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
               ),
               // Instructions
               Positioned(
-                bottom: 20,
+                bottom: 40,
                 left: 0,
                 right: 0,
                 child: Center(
@@ -236,9 +275,11 @@ class _QRScanScreenState extends State<QRScanScreen> {
                       vertical: 8,
                     ),
                     color: Colors.black54,
-                    child: const Text(
-                      'Place QR code within the square',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    child: Text(
+                      _isCheckInMode
+                          ? 'Place QR code within the square to check in'
+                          : 'Place QR code within the square to check out',
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),
                 ),
@@ -290,9 +331,9 @@ class ScannerOverlayPainter extends CustomPainter {
     // Draw corner markers
     final cornerPaint =
         Paint()
-          ..color = Colors.green
+          ..color = const Color.fromARGB(255, 209, 208, 136)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 6.0;
+          ..strokeWidth = 8.0;
     const cornerLength = 20.0;
     // Top-left
     canvas.drawLine(

@@ -7,7 +7,7 @@
         android:maxSdkVersion="28" />
 
     <application
-        android:label="sabang_es"
+        android:label="SES QR Scanner"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
