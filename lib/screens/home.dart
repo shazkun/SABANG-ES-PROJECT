@@ -1,6 +1,6 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:sabang_es/models/emailer_model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -68,7 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/scan'),
+        onPressed:
+            () => Navigator.pushNamed(
+              context,
+              Platform.isAndroid ? '/scan' : '/wqrscanner',
+            ),
         backgroundColor: const Color(0xFF1976D2),
         child: const Icon(Icons.qr_code_scanner, color: Colors.white),
       ),
