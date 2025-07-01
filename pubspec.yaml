@@ -27,6 +27,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   excel: ^4.0.6
   process_run: ^0.12.3+2
+  audioplayers: ^6.5.0
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +43,8 @@ flutter:
 
   assets:
     - assets/image/sabanges_logo.png
+    - assets/audio/success.mp3
+    - assets/audio/failed.mp3
 
   fonts:
     - family: Poppins

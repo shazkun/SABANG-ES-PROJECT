@@ -8,6 +8,7 @@ import 'package:mailer/smtp_server/gmail.dart';
 import 'package:sabang_es/database/database_helper.dart';
 import 'package:sabang_es/models/emailer_model.dart';
 import 'package:sabang_es/models/qr_model.dart';
+import 'package:sabang_es/soundplayer/audio_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -27,11 +28,12 @@ class _QRScannerPageState extends State<QRScannerPage>
   bool _isScanning = false;
   final Map<String, DateTime> _scanCooldowns = {};
   final Set<String> _processedQRs = {};
-  static const int _cooldownSeconds = 10;
+  static const int _cooldownSeconds = 3;
   bool _isDialogOpen = false;
   String? savedEmail;
   String? savedCode;
   bool _isCheckInMode = true;
+  final audioHelper = AudioHelper();
 
   @override
   void initState() {
@@ -73,7 +75,6 @@ class _QRScannerPageState extends State<QRScannerPage>
     final messageText = (_isCheckInMode ? checkInMsg : checkOutMsg)
         .replaceAll('{name}', name)
         .replaceAll('{datetime}', nowStr);
-    savedCode = EncryptionHelper.decryptText(savedCode!);
     final smtpServer = gmail(savedEmail!, savedCode!);
     final message =
         Message()
@@ -202,6 +203,7 @@ class _QRScannerPageState extends State<QRScannerPage>
       // Update cooldown and send email
       _scanCooldowns[id] = now;
       await _sendEmail(email, name);
+      audioHelper.playSuccess();
     } catch (e) {
       await DatabaseHelper().insertQRLog(
         QRModel(
@@ -211,6 +213,7 @@ class _QRScannerPageState extends State<QRScannerPage>
           gradeSection: 'Scan Error: $e',
         ),
       );
+      await audioHelper.playFailed();
       await _showDialog('Error', 'Invalid QR code: $e');
     }
   }
@@ -325,7 +328,9 @@ class _QRScannerPageState extends State<QRScannerPage>
                 onPressed: toggleScanning,
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
-                      _isScanning ? Colors.red[600] : Colors.blue[700],
+                      _isScanning
+                          ? Colors.deepOrange[600]
+                          : Colors.blueAccent[700],
                   foregroundColor: Colors.white,
                   elevation: 2,
                   padding: const EdgeInsets.symmetric(
@@ -334,6 +339,25 @@ class _QRScannerPageState extends State<QRScannerPage>
                   ),
                 ),
                 child: Text(_isScanning ? 'Stop Scanning' : 'Start Scanning'),
+              ),
+              SizedBox(height: 15),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _isCheckInMode = !_isCheckInMode;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      _isCheckInMode ? Colors.green[600] : Colors.red[700],
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                ),
+                child: Text(_isCheckInMode ? 'Time-in' : 'Time-out'),
               ),
             ],
           ),
