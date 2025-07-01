@@ -129,9 +129,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   final prefs = await SharedPreferences.getInstance();
                   final email = emailController.text.trim();
                   final code = codeController.text;
-                  // final encryptedCode = EncryptionHelper.encryptText(code);
+                  final encryptedCode = EncryptionHelper.encryptText(code);
                   await prefs.setString('email', email);
-                  await prefs.setString('code', code);
+                  await prefs.setString('code', encryptedCode);
                   Navigator.pop(context); // Close confirm dialog
                   _loadSavedData();
                   Navigator.pop(context); // Return to previous screen

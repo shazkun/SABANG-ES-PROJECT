@@ -6,7 +6,6 @@ import 'package:mailer/mailer.dart';
 import 'package:mailer/mailer.dart' as mailer;
 import 'package:mailer/smtp_server/gmail.dart';
 import 'package:sabang_es/database/database_helper.dart';
-import 'package:sabang_es/models/emailer_model.dart';
 import 'package:sabang_es/models/qr_model.dart';
 import 'package:sabang_es/soundplayer/audio_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,8 +26,8 @@ class _QRScannerPageState extends State<QRScannerPage>
   late Animation<double> _fadeAnimation;
   bool _isScanning = false;
   final Map<String, DateTime> _scanCooldowns = {};
-  final Set<String> _processedQRs = {};
-  static const int _cooldownSeconds = 3;
+  // final Set<String> _processedQRs = {};
+  static const int _cooldownSeconds = 1;
   bool _isDialogOpen = false;
   String? savedEmail;
   String? savedCode;
@@ -75,6 +74,7 @@ class _QRScannerPageState extends State<QRScannerPage>
     final messageText = (_isCheckInMode ? checkInMsg : checkOutMsg)
         .replaceAll('{name}', name)
         .replaceAll('{datetime}', nowStr);
+
     final smtpServer = gmail(savedEmail!, savedCode!);
     final message =
         Message()
@@ -82,8 +82,8 @@ class _QRScannerPageState extends State<QRScannerPage>
           ..recipients.add(recipientEmail)
           ..subject =
               _isCheckInMode
-                  ? 'QR Check-In Notification'
-                  : 'QR Check-Out Notification'
+                  ? 'QR Time-In Notification'
+                  : 'QR Time-Out Notification'
           ..text = messageText;
 
     try {
@@ -146,8 +146,8 @@ class _QRScannerPageState extends State<QRScannerPage>
       final id = parts[0];
 
       // Prevent processing the same QR code multiple times during processing
-      if (_processedQRs.contains(id)) return;
-      _processedQRs.add(id);
+      // if (_processedQRs.contains(id)) return;
+      // _processedQRs.add(id);
 
       // Log raw value for debugging
       await DatabaseHelper().insertQRLog(
@@ -190,7 +190,7 @@ class _QRScannerPageState extends State<QRScannerPage>
             'Cooldown',
             'This QR code was recently scanned. Please wait ${_cooldownSeconds - difference} seconds.',
           );
-          _processedQRs.remove(id); // Allow retry after dialog
+          // _processedQRs.remove(id); // Allow retry after dialog
           return;
         }
       }
@@ -202,8 +202,8 @@ class _QRScannerPageState extends State<QRScannerPage>
 
       // Update cooldown and send email
       _scanCooldowns[id] = now;
-      await _sendEmail(email, name);
       audioHelper.playSuccess();
+      await _sendEmail(email, name);
     } catch (e) {
       await DatabaseHelper().insertQRLog(
         QRModel(
