@@ -27,7 +27,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   excel: ^4.0.6
   process_run: ^0.12.3+2
-  audioplayers: ^6.5.0
+  audioplayers: ^5.2.1
 
 dev_dependencies:
   flutter_test:

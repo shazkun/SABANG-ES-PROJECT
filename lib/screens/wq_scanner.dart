@@ -7,7 +7,7 @@ import 'package:mailer/mailer.dart' as mailer;
 import 'package:mailer/smtp_server/gmail.dart';
 import 'package:sabang_es/database/database_helper.dart';
 import 'package:sabang_es/models/qr_model.dart';
-import 'package:sabang_es/soundplayer/audio_helper.dart';
+// import 'package:sabang_es/soundplayer/audio_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -32,7 +32,7 @@ class _QRScannerPageState extends State<QRScannerPage>
   String? savedEmail;
   String? savedCode;
   bool _isCheckInMode = true;
-  final audioHelper = AudioHelper();
+  // final audioHelper = AudioHelper();
 
   @override
   void initState() {
@@ -202,7 +202,7 @@ class _QRScannerPageState extends State<QRScannerPage>
 
       // Update cooldown and send email
       _scanCooldowns[id] = now;
-      audioHelper.playSuccess();
+      // audioHelper.playSuccess();
       await _sendEmail(email, name);
     } catch (e) {
       await DatabaseHelper().insertQRLog(
@@ -213,7 +213,7 @@ class _QRScannerPageState extends State<QRScannerPage>
           gradeSection: 'Scan Error: $e',
         ),
       );
-      await audioHelper.playFailed();
+      //await audioHelper.playFailed();
       await _showDialog('Error', 'Invalid QR code: $e');
     }
   }

@@ -30,7 +30,7 @@ def main():
                 last_data = qr_data
                 last_time = current_time
                 print(json.dumps({"result": qr_data}), flush=True)
-
+ 
         cv2.imshow('Continuous QR Scanner - Press Q to quit', frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
