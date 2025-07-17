@@ -84,9 +84,9 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
-                          controller: _functions.gradeSectionController,
+                          controller: _functions.yearController,
                           decoration: InputDecoration(
-                            labelText: 'Grade Section',
+                            labelText: 'School Year',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -94,9 +94,9 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                             fillColor: Colors.grey[50],
                           ),
                           validator:
-                              (value) =>
-                                  value!.isEmpty ? 'Enter grade section' : null,
+                              (value) => value!.isEmpty ? 'Enter S.Y' : null,
                         ),
+
                         const SizedBox(height: 16),
 
                         Row(
@@ -137,9 +137,7 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              width: 12,
-                            ), // spacing between buttons
+                            const SizedBox(width: 12),
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
@@ -171,89 +169,104 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                   ),
                 ),
               ),
-              if (_functions.qrModel != null) ...[
-                const SizedBox(height: 24),
-                Card(
-                  elevation: 3,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: QrImageView(
-                              data: _functions.encodeQRData(
-                                _functions.qrModel!,
-                              ),
-                              version: QrVersions.auto,
-                              size: 120.0,
-                              backgroundColor: Colors.white,
+              const SizedBox(height: 24),
+              Card(
+                elevation: 3,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Details',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Name: ${_functions.qrModel!.name}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Email: ${_functions.qrModel!.email}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Grade: ${_functions.qrModel!.gradeSection}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child:
+                              _functions.qrModel != null
+                                  ? QrImageView(
+                                    data: _functions.encodeQRData(
+                                      _functions.qrModel!,
+                                    ),
+                                    version: QrVersions.auto,
+                                    size: 120.0,
+                                    backgroundColor: Colors.white,
+                                  )
+                                  : Container(
+                                    width: 120.0,
+                                    height: 120.0,
+                                    color: Colors.grey[200],
+                                    child: const Icon(
+                                      Icons.question_mark,
+                                      size: 60,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Details',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _functions.qrModel != null
+                                  ? 'Name: ${_functions.qrModel!.name}'
+                                  : 'Name: -',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _functions.qrModel != null
+                                  ? 'Email: ${_functions.qrModel!.email}'
+                                  : 'Email: -',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _functions.qrModel != null
+                                  ? 'Grade: ${_functions.qrModel!.year}'
+                                  : 'Grade: -',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ],
           ),
         ),

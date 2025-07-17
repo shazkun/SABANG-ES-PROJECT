@@ -80,7 +80,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
           id: const Uuid().v4(),
           name: name,
           email: 'email_error@error.com',
-          gradeSection: 'Email Failure: $e',
+          year: 'Email Failure: $e',
         ),
       );
       await _showDialog('Error', 'Failed to send email: $e');
@@ -137,7 +137,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
           id: const Uuid().v4(),
           name: 'Raw Scan',
           email: 'raw_scan@debug.com',
-          gradeSection: 'Raw Data: $rawValue',
+          year: 'Raw Data: $rawValue',
         ),
       );
 
@@ -147,7 +147,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
       }
       if (parts.length != 4) {
         throw const FormatException(
-          'QR code must contain exactly 4 fields (id|name|email|gradeSection)',
+          'QR code must contain exactly 4 fields (id|name|email|year)',
         );
       }
       if (parts[0].isEmpty ||
@@ -160,7 +160,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
       // Extract fields
       final name = parts[1];
       final email = parts[2];
-      final gradeSection = parts[3];
+      final year = parts[3];
 
       // Check cooldown before logging or sending email
       final now = DateTime.now();
@@ -179,7 +179,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
 
       // Log successful scan to database
       await DatabaseHelper().insertQRLog(
-        QRModel(id: id, name: name, email: email, gradeSection: gradeSection),
+        QRModel(id: id, name: name, email: email, year: year),
       );
 
       // Update cooldown and send email
@@ -191,7 +191,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
           id: const Uuid().v4(),
           name: 'Unknown',
           email: 'scan_error@error.com',
-          gradeSection: 'Scan Error: $e',
+          year: 'Scan Error: $e',
         ),
       );
       await _showDialog('Error', 'Invalid QR code: $e');
@@ -250,7 +250,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
                           id: const Uuid().v4(),
                           name: 'Unknown',
                           email: 'scan_error@error.com',
-                          gradeSection: 'Scan Error: No data in QR code',
+                          year: 'Scan Error: No data in QR code',
                         ),
                       );
                       _showDialog('Error', 'No data found in QR code');

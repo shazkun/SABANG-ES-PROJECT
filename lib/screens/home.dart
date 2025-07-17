@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          'Attendance Scanner',
+          'QR Attendance Scanner',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFF1976D2),

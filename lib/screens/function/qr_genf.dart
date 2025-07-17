@@ -10,20 +10,21 @@ import 'package:excel/excel.dart';
 class QRGenerateFunctions {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
-  final gradeSectionController = TextEditingController();
-  QRModel? qrModel;
+  final yearController = TextEditingController();
+  QRModel? qrModel; 
+
 
   void initControllers() {
     nameController.clear();
     emailController.clear();
-    gradeSectionController.clear();
+    yearController.clear();
     qrModel = null;
   }
 
   void dispose() {
     nameController.dispose();
     emailController.dispose();
-    gradeSectionController.dispose();
+    yearController.dispose();
   }
 
   Future<void> generateQR(BuildContext context) async {
@@ -31,14 +32,14 @@ class QRGenerateFunctions {
       id: const Uuid().v4(),
       name: nameController.text,
       email: emailController.text,
-      gradeSection: gradeSectionController.text,
+      year: yearController.text,
     );
     await DatabaseHelper().insertQRLog(qr);
     qrModel = qr;
   }
 
   String encodeQRData(QRModel qr) {
-    return '${qr.id}|${qr.name}|${qr.email}|${qr.gradeSection}';
+    return '${qr.id}|${qr.name}|${qr.email}|${qr.year}';
   }
 
   Future<List<QRModel>> generateBatchQR(BuildContext context) async {
@@ -73,7 +74,7 @@ class QRGenerateFunctions {
               id: const Uuid().v4(),
               name: row[0]?.toString() ?? '',
               email: row[1]?.toString() ?? '',
-              gradeSection: row[2]?.toString() ?? '',
+              year: row[2]?.toString() ?? '',
             );
             await DatabaseHelper().insertQRLog(qr);
             generatedQRs.add(qr);
@@ -95,7 +96,7 @@ class QRGenerateFunctions {
               id: const Uuid().v4(),
               name: row[0]?.value?.toString() ?? '',
               email: row[1]?.value?.toString() ?? '',
-              gradeSection: row[2]?.value?.toString() ?? '',
+              year: row[2]?.value?.toString() ?? '',
             );
             await DatabaseHelper().insertQRLog(qr);
             generatedQRs.add(qr);

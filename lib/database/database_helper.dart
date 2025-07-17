@@ -26,7 +26,7 @@ class DatabaseHelper {
             id TEXT PRIMARY KEY,
             name TEXT,
             email TEXT,
-            gradeSection TEXT
+            year TEXT
           )
         ''');
       },
@@ -46,7 +46,7 @@ class DatabaseHelper {
   Future<List<QRModel>> getQRLogs() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('qr_logs');
-    print('Fetched QRLogs: $maps'); // Debug log
+    // print('Fetched QRLogs: $maps'); // Debug log
     return List.generate(maps.length, (i) {
       return QRModel.fromMap(maps[i]);
     });

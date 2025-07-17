@@ -98,7 +98,7 @@ class _QRScannerPageState extends State<QRScannerPage>
           id: const Uuid().v4(),
           name: name,
           email: 'email_error@error.com',
-          gradeSection: 'Email Failure: $e',
+          year: 'Email Failure: $e',
         ),
       );
       await _showDialog('Error', 'Failed to send email: $e');
@@ -108,10 +108,19 @@ class _QRScannerPageState extends State<QRScannerPage>
   Future<void> _showDialog(String title, String message) async {
     if (_isDialogOpen) return;
     _isDialogOpen = true;
-    await showDialog<void>(
+
+    // Show the dialog
+    showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
+        // Start timer to auto-close
+        Future.delayed(const Duration(seconds: 2), () {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(); // Auto close
+          }
+        });
+
         return AlertDialog(
           backgroundColor: Colors.white,
           title: Text(
@@ -122,18 +131,11 @@ class _QRScannerPageState extends State<QRScannerPage>
             ),
           ),
           content: Text(message, style: const TextStyle(color: Colors.black)),
-          actions: [
-            TextButton(
-              child: const Text('OK', style: TextStyle(color: Colors.black)),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
         );
       },
-    );
-    _isDialogOpen = false;
+    ).then((_) {
+      _isDialogOpen = false;
+    });
   }
 
   Future<void> _processQRCode(String rawValue) async {
@@ -155,7 +157,7 @@ class _QRScannerPageState extends State<QRScannerPage>
           id: const Uuid().v4(),
           name: 'Raw Scan',
           email: 'raw_scan@debug.com',
-          gradeSection: 'Raw Data: $rawValue',
+          year: 'Raw Data: $rawValue',
         ),
       );
 
@@ -165,7 +167,7 @@ class _QRScannerPageState extends State<QRScannerPage>
       }
       if (parts.length != 4) {
         throw const FormatException(
-          'QR code must contain exactly 4 fields (id|name|email|gradeSection)',
+          'QR code must contain exactly 4 fields (id|name|email|year)',
         );
       }
       if (parts[0].isEmpty ||
@@ -178,7 +180,7 @@ class _QRScannerPageState extends State<QRScannerPage>
       // Extract fields
       final name = parts[1];
       final email = parts[2];
-      final gradeSection = parts[3];
+      final year = parts[3];
 
       // Check cooldown before logging or sending email
       final now = DateTime.now();
@@ -197,7 +199,7 @@ class _QRScannerPageState extends State<QRScannerPage>
 
       // Log successful scan to database
       await DatabaseHelper().insertQRLog(
-        QRModel(id: id, name: name, email: email, gradeSection: gradeSection),
+        QRModel(id: id, name: name, email: email, year: year),
       );
 
       // Update cooldown and send email
@@ -210,7 +212,7 @@ class _QRScannerPageState extends State<QRScannerPage>
           id: const Uuid().v4(),
           name: 'Unknown',
           email: 'scan_error@error.com',
-          gradeSection: 'Scan Error: $e',
+          year: 'Scan Error: $e',
         ),
       );
       //await audioHelper.playFailed();

@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'QR Manager',
       theme: ThemeData(
-        fontFamily: 'Poppins', // Add this line
+        fontFamily: 'Poppins',
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.black,
           brightness: Brightness.light,

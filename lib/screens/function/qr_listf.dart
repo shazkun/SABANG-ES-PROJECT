@@ -47,8 +47,16 @@ class QRListFunctions {
     }
   }
 
+  void selectAll(bool select) {
+    if (select) {
+      selectedQRs.addAll(filteredQRCodes);
+    } else {
+      selectedQRs.clear();
+    }
+  }
+
   String encodeQRData(QRModel qr) {
-    return '${qr.id}|${qr.name}|${qr.email}|${qr.gradeSection}';
+    return '${qr.id}|${qr.name}|${qr.email}|${qr.year}';
   }
 
   Future<void> generateQRImages(BuildContext context) async {
@@ -68,42 +76,155 @@ class QRListFunctions {
     }
 
     final directory = await getApplicationDocumentsDirectory();
+    int successCount = 0;
+    int failCount = 0;
 
     for (final qr in selectedQRs) {
-      final qrPainter = QrPainter(
-        data: encodeQRData(qr),
-        version: QrVersions.auto,
-        gapless: true,
-        color: Colors.black,
-        emptyColor: Colors.white,
-      );
+      try {
+        final qrPainter = QrPainter(
+          data: encodeQRData(qr),
+          version: QrVersions.auto,
+          gapless: true,
+          color: Colors.black,
+          emptyColor: Colors.white,
+        );
 
-      final picData = await qrPainter.toImageData(
-        300,
-        format: ui.ImageByteFormat.png,
-      );
+        final picData = await qrPainter.toImageData(
+          300,
+          format: ui.ImageByteFormat.png,
+        );
 
-      final sanitizedName = qr.name.replaceAll(RegExp(r'[^\w\s-]'), '_');
-      final sanitizedSection = qr.gradeSection.replaceAll(
-        RegExp(r'[^\w\s-]'),
-        '_',
-      );
-      final fileName = '${sanitizedName}_${sanitizedSection}.png';
-      final path = "${directory.path}/$fileName";
-      final file = File(path);
+        final sanitizedName = qr.name.replaceAll(RegExp(r'[^\w\s-]'), '_');
+        final sanitizedSection = qr.year.replaceAll(RegExp(r'[^\w\s-]'), '_');
+        final fileName = '${sanitizedName}_${sanitizedSection}.png';
+        final path = "${directory.path}/$fileName";
+        final file = File(path);
 
-      await file.writeAsBytes(picData!.buffer.asUint8List());
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('QR image saved to $path')));
+        await file.writeAsBytes(picData!.buffer.asUint8List());
+        successCount++;
+      } catch (e) {
+        failCount++;
+      }
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Saved $successCount QR code${successCount != 1 ? 's' : ''} successfully. ${failCount > 0 ? '$failCount failed.' : ''}',
+        ),
+        backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
+      ),
+    );
   }
 
-  Future<void> showEditDialog(BuildContext context, QRModel qr) async {
+  Future<void> deleteSelectedQRCodes(
+    BuildContext context,
+    void Function(void Function()) setState,
+  ) async {
+    if (selectedQRs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one QR code to delete'),
+        ),
+      );
+      return;
+    }
+
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Delete Selected QR Codes',
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+              fontSize: 20,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete ${selectedQRs.length} QR code${selectedQRs.length != 1 ? 's' : ''}?',
+            style: const TextStyle(color: Colors.black54),
+          ),
+          actions: [
+            TextButton(
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.black54),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: Colors.white),
+              ),
+              onPressed: () async {
+                try {
+                  int successCount = 0;
+                  int failCount = 0;
+                  for (final qr in selectedQRs.toList()) {
+                    try {
+                      await _dbHelper.deleteQRLog(qr.id);
+                      successCount++;
+                    } catch (e) {
+                      failCount++;
+                    }
+                  }
+                  await loadQRCodes((qrCodes, selectedQRs) {
+                    setState(() {
+                      this.qrCodes = qrCodes;
+                      this.selectedQRs = selectedQRs;
+                      filterQRCodes('');
+                    });
+                  });
+
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Deleted $successCount QR code${successCount != 1 ? 's' : ''} successfully. ${failCount > 0 ? '$failCount failed.' : ''}',
+                      ),
+                      backgroundColor:
+                          failCount > 0 ? Colors.orange : Colors.green,
+                    ),
+                  );
+                } catch (e) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to delete QR codes: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> showEditDialog(
+    BuildContext context,
+    QRModel qr,
+    void Function(void Function()) setState,
+  ) async {
     final nameController = TextEditingController(text: qr.name);
     final emailController = TextEditingController(text: qr.email);
-    final gradeSectionController = TextEditingController(text: qr.gradeSection);
+    final yearController = TextEditingController(text: qr.year);
     final formKey = GlobalKey<FormState>();
 
     return showDialog<void>(
@@ -156,7 +277,7 @@ class QRListFunctions {
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
-                    controller: gradeSectionController,
+                    controller: yearController,
                     decoration: InputDecoration(
                       labelText: 'Grade Section',
                       border: OutlineInputBorder(
@@ -195,14 +316,16 @@ class QRListFunctions {
                     id: qr.id,
                     name: nameController.text,
                     email: emailController.text,
-                    gradeSection: gradeSectionController.text,
+                    year: yearController.text,
                   );
                   try {
                     await _dbHelper.updateQRLog(updatedQR);
                     await loadQRCodes((qrCodes, selectedQRs) {
-                      this.qrCodes = qrCodes;
-                      this.selectedQRs = selectedQRs;
-                      filterQRCodes('');
+                      setState(() {
+                        this.qrCodes = qrCodes;
+                        this.selectedQRs = selectedQRs;
+                        filterQRCodes('');
+                      });
                     });
                     Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -212,6 +335,7 @@ class QRListFunctions {
                       ),
                     );
                   } catch (e) {
+                    Navigator.of(context).pop();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Failed to update QR code: $e'),
@@ -292,6 +416,7 @@ class QRListFunctions {
                     ),
                   );
                 } catch (e) {
+                  Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Failed to delete QR code: $e'),
