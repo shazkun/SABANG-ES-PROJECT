@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sabang_es/database/database_helper.dart';
 import 'package:sabang_es/models/qr_model.dart';
 import 'package:uuid/uuid.dart';
@@ -11,8 +12,7 @@ class QRGenerateFunctions {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final yearController = TextEditingController();
-  QRModel? qrModel; 
-
+  QRModel? qrModel;
 
   void initControllers() {
     nameController.clear();
@@ -40,6 +40,19 @@ class QRGenerateFunctions {
 
   String encodeQRData(QRModel qr) {
     return '${qr.id}|${qr.name}|${qr.email}|${qr.year}';
+  }
+
+  // New method to provide QR code data with transparency settings for UI
+  Widget generateTransparentQRWidget(QRModel qr) {
+    final qrData = encodeQRData(qr);
+    return QrImageView(
+      data: qrData,
+      version: QrVersions.auto,
+      size: 200.0,
+      backgroundColor: Colors.transparent, // Ensure transparent background
+      foregroundColor: Colors.black, // High contrast for readability
+      padding: const EdgeInsets.all(10.0),
+    );
   }
 
   Future<List<QRModel>> generateBatchQR(BuildContext context) async {

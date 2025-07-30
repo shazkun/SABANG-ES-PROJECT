@@ -75,7 +75,14 @@ class QRListFunctions {
       return;
     }
 
-    final directory = await getApplicationDocumentsDirectory();
+    final baseDir = await getApplicationDocumentsDirectory();
+    final qrFolder = Directory('${baseDir.path}/QR_Codes');
+
+    // Create the folder if it doesn't exist
+    if (!await qrFolder.exists()) {
+      await qrFolder.create(recursive: true);
+    }
+
     int successCount = 0;
     int failCount = 0;
 
@@ -97,9 +104,8 @@ class QRListFunctions {
         final sanitizedName = qr.name.replaceAll(RegExp(r'[^\w\s-]'), '_');
         final sanitizedSection = qr.year.replaceAll(RegExp(r'[^\w\s-]'), '_');
         final fileName = '${sanitizedName}_${sanitizedSection}.png';
-        final path = "${directory.path}/$fileName";
-        final file = File(path);
 
+        final file = File('${qrFolder.path}/$fileName');
         await file.writeAsBytes(picData!.buffer.asUint8List());
         successCount++;
       } catch (e) {
@@ -110,7 +116,7 @@ class QRListFunctions {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Saved $successCount QR code${successCount != 1 ? 's' : ''} successfully. ${failCount > 0 ? '$failCount failed.' : ''}',
+          'Saved $successCount QR code${successCount != 1 ? 's' : ''} to /QR_Codes/. ${failCount > 0 ? '$failCount failed.' : ''}',
         ),
         backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
       ),
