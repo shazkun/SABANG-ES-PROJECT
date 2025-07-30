@@ -29,7 +29,7 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color(0xFF1976D2),
         elevation: 0,
         centerTitle: true,
         title: const Text(

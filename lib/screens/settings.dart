@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sabang_es/models/emailer_model.dart';
+import 'package:sabang_es/models/encryptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {

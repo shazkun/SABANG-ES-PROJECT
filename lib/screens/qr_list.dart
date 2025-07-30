@@ -47,7 +47,7 @@ class _QRListScreenState extends State<QRListScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: const Color(0xFF1976D2),
         elevation: 0,
         title: const Text(
           'QR Code List',
