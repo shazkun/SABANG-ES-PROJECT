@@ -73,7 +73,7 @@ class _QRScannerPageState extends State<QRScannerPage>
     final smtpServer = gmail(savedEmail!, dCode);
     final message =
         Message()
-          ..from = Address(savedEmail!, 'QR Scanner')
+          ..from = Address(savedEmail!, 'Sabang Elementary School')
           ..recipients.add(recipientEmail)
           ..subject =
               _isCheckInMode
@@ -84,14 +84,14 @@ class _QRScannerPageState extends State<QRScannerPage>
     try {
       await send(message, smtpServer);
     } catch (e) {
-      await DatabaseHelper().insertQRLog(
-        QRModel(
-          id: const Uuid().v4(),
-          name: name,
-          email: 'email_error@error.com',
-          year: 'Email Failure: $e',
-        ),
-      );
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(
+      //     id: const Uuid().v4(),
+      //     name: name,
+      //     email: 'email_error@error.com',
+      //     year: 'Email Failure: $e',
+      //   ),
+      // );
       await _showDialog('Error', 'Failed to send email: $e');
     }
   }
@@ -167,14 +167,14 @@ class _QRScannerPageState extends State<QRScannerPage>
         throw const FormatException('Invalid QR code format');
       }
 
-      await DatabaseHelper().insertQRLog(
-        QRModel(
-          id: const Uuid().v4(),
-          name: 'Raw Scan',
-          email: 'raw_scan@debug.com',
-          year: 'Raw Data: $rawValue',
-        ),
-      );
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(
+      //     id: const Uuid().v4(),
+      //     name: 'Raw Scan',
+      //     email: 'raw_scan@debug.com',
+      //     year: 'Raw Data: $rawValue',
+      //   ),
+      // );
 
       if (rawValue.isEmpty) {
         throw const FormatException('QR code contains no data');
@@ -195,10 +195,11 @@ class _QRScannerPageState extends State<QRScannerPage>
       final email = parts[2];
       final year = parts[3];
 
-      await DatabaseHelper().insertQRLog(
-        QRModel(id: parts[0], name: name, email: email, year: year),
-      );
-      await _showDialog('Success', 'Email sent successfully to $email');
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(id: parts[0], name: name, email: email, year: year),
+      // );
+      // await _showDialog('Success', 'Email sent successfully to $email');
+      await _showDialog('Success', 'Time-in successful. Have a great day!');
       await _sendEmail(email, name);
     } catch (e) {
       await DatabaseHelper().insertQRLog(

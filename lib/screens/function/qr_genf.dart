@@ -128,4 +128,5 @@ class QRGenerateFunctions {
 
     return generatedQRs;
   }
+  
 }

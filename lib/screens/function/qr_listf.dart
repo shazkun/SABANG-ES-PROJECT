@@ -1,5 +1,8 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -57,6 +60,90 @@ class QRListFunctions {
 
   String encodeQRData(QRModel qr) {
     return '${qr.id}|${qr.name}|${qr.email}|${qr.year}';
+  }
+
+  Future<void> generateQRTablePdf(BuildContext context) async {
+    if (selectedQRs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select at least one QR code')),
+      );
+      return;
+    }
+
+    final pdf = pw.Document();
+
+    List<pw.TableRow> tableRows = [
+      pw.TableRow(
+        children: [
+          pw.Text(
+            'QR Code',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+          pw.Text('Name', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        ],
+      ),
+    ];
+
+    for (final qr in selectedQRs) {
+      try {
+        final qrPainter = QrPainter(
+          data: encodeQRData(qr),
+          version: QrVersions.auto,
+          gapless: true,
+          color: Colors.black,
+          emptyColor: Colors.white,
+        );
+
+        final picData = await qrPainter.toImageData(
+          150,
+          format: ui.ImageByteFormat.png,
+        );
+        final Uint8List pngBytes = picData!.buffer.asUint8List();
+
+        final qrImage = pw.MemoryImage(pngBytes);
+
+        tableRows.add(
+          pw.TableRow(
+            children: [
+              pw.Container(
+                height: 100,
+                child: pw.Image(qrImage),
+                padding: const pw.EdgeInsets.all(4),
+              ),
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(8.0),
+                child: pw.Text(qr.name),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        // You can log the error if needed
+      }
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        build:
+            (context) => [
+              pw.Text('QR Code Table', style: pw.TextStyle(fontSize: 24)),
+              pw.SizedBox(height: 20),
+              pw.Table(border: pw.TableBorder.all(), children: tableRows),
+            ],
+      ),
+    );
+
+    final outputDir = await getApplicationDocumentsDirectory();
+    final file = File("${outputDir.path}/QR_Code_Table.pdf");
+
+    await file.writeAsBytes(await pdf.save());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('QR Code PDF saved to ${file.path}'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   Future<void> generateQRImages(BuildContext context) async {
@@ -285,16 +372,14 @@ class QRListFunctions {
                   TextFormField(
                     controller: yearController,
                     decoration: InputDecoration(
-                      labelText: 'Grade Section',
+                      labelText: 'Year',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
                       fillColor: Colors.grey[100],
                     ),
-                    validator:
-                        (value) =>
-                            value!.isEmpty ? 'Enter grade section' : null,
+                    validator: (value) => value!.isEmpty ? 'Enter Year' : null,
                   ),
                 ],
               ),

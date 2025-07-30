@@ -4,9 +4,6 @@ import 'package:mailer/mailer.dart' as mailer;
 import 'package:mailer/smtp_server.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/qr_model.dart';
-import '../database/database_helper.dart';
-import 'package:uuid/uuid.dart';
 
 class QRScanScreen extends StatefulWidget {
   const QRScanScreen({super.key});
@@ -60,7 +57,10 @@ class _QRScanScreenState extends State<QRScanScreen> {
     final smtpServer = gmail(savedEmail!, savedCode!);
     final message =
         Message()
-          ..from = mailer.Address('your-email@gmail.com', 'QR Scanner')
+          ..from = mailer.Address(
+            'your-email@gmail.com',
+            'Sabang Elementary School',
+          )
           ..recipients.add(recipientEmail)
           ..subject =
               _isCheckInMode
@@ -75,14 +75,14 @@ class _QRScanScreenState extends State<QRScanScreen> {
         'Email sent successfully to $recipientEmail',
       );
     } catch (e) {
-      await DatabaseHelper().insertQRLog(
-        QRModel(
-          id: const Uuid().v4(),
-          name: name,
-          email: 'email_error@error.com',
-          year: 'Email Failure: $e',
-        ),
-      );
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(
+      //     id: const Uuid().v4(),
+      //     name: name,
+      //     email: 'email_error@error.com',
+      //     year: 'Email Failure: $e',
+      //   ),
+      // );
       await _showDialog('Error', 'Failed to send email: $e');
     }
   }
@@ -132,14 +132,14 @@ class _QRScanScreenState extends State<QRScanScreen> {
       _processedQRs.add(id);
 
       // Log raw value for debugging
-      await DatabaseHelper().insertQRLog(
-        QRModel(
-          id: const Uuid().v4(),
-          name: 'Raw Scan',
-          email: 'raw_scan@debug.com',
-          year: 'Raw Data: $rawValue',
-        ),
-      );
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(
+      //     id: const Uuid().v4(),
+      //     name: 'Raw Scan',
+      //     email: 'raw_scan@debug.com',
+      //     year: 'Raw Data: $rawValue',
+      //   ),
+      // );
 
       // Validate QR code
       if (rawValue.isEmpty) {
@@ -147,7 +147,7 @@ class _QRScanScreenState extends State<QRScanScreen> {
       }
       if (parts.length != 4) {
         throw const FormatException(
-          'QR code must contain exactly 4 fields (id|name|email|year)',
+          'QR code must be generated from the official application',
         );
       }
       if (parts[0].isEmpty ||
@@ -178,22 +178,22 @@ class _QRScanScreenState extends State<QRScanScreen> {
       }
 
       // Log successful scan to database
-      await DatabaseHelper().insertQRLog(
-        QRModel(id: id, name: name, email: email, year: year),
-      );
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(id: id, name: name, email: email, year: year),
+      // );
 
       // Update cooldown and send email
       _scanCooldowns[id] = now;
       await _sendEmail(email, name);
     } catch (e) {
-      await DatabaseHelper().insertQRLog(
-        QRModel(
-          id: const Uuid().v4(),
-          name: 'Unknown',
-          email: 'scan_error@error.com',
-          year: 'Scan Error: $e',
-        ),
-      );
+      // await DatabaseHelper().insertQRLog(
+      //   QRModel(
+      //     id: const Uuid().v4(),
+      //     name: 'Unknown',
+      //     email: 'scan_error@error.com',
+      //     year: 'Scan Error: $e',
+      //   ),
+      // );
       await _showDialog('Error', 'Invalid QR code: $e');
     }
   }
@@ -245,14 +245,14 @@ class _QRScanScreenState extends State<QRScanScreen> {
                     if (barcode.rawValue != null) {
                       _processQRCode(barcode.rawValue!);
                     } else {
-                      DatabaseHelper().insertQRLog(
-                        QRModel(
-                          id: const Uuid().v4(),
-                          name: 'Unknown',
-                          email: 'scan_error@error.com',
-                          year: 'Scan Error: No data in QR code',
-                        ),
-                      );
+                      // DatabaseHelper().insertQRLog(
+                      //   QRModel(
+                      //     id: const Uuid().v4(),
+                      //     name: 'Unknown',
+                      //     email: 'scan_error@error.com',
+                      //     year: 'Scan Error: No data in QR code',
+                      //   ),
+                      // );
                       _showDialog('Error', 'No data found in QR code');
                     }
                   }

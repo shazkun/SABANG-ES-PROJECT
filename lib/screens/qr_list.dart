@@ -69,6 +69,11 @@ class _QRListScreenState extends State<QRListScreen> {
               },
             ),
             IconButton(
+              icon: const Icon(Icons.document_scanner, color: Colors.white),
+              tooltip: 'Export QR Images to PDF',
+              onPressed: () => _functions.generateQRTablePdf(context),
+            ),
+            IconButton(
               icon: const Icon(Icons.image, color: Colors.white),
               tooltip: 'Export QR Images',
               onPressed: () => _functions.generateQRImages(context),
@@ -208,7 +213,7 @@ class _QRListScreenState extends State<QRListScreen> {
                                           ),
                                         ),
                                         Text(
-                                          'Grade: ${qr.year}',
+                                          'Year: ${qr.year}',
                                           style: const TextStyle(
                                             color: Colors.black54,
                                             fontSize: 14,
