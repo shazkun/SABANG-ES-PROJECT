@@ -14,7 +14,6 @@ class CustomSnackBar {
     Duration duration = const Duration(seconds: 2),
   }) {
     if (_isShowing) {
-      // Clear any existing SnackBar before showing a new one
       ScaffoldMessenger.of(context).clearSnackBars();
     }
 
@@ -31,20 +30,16 @@ class CustomSnackBar {
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                color: textColor ?? Colors.white,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: textColor ?? Colors.white, fontSize: 16),
             ),
           ),
         ],
       ),
-      backgroundColor: backgroundColor ??
+      backgroundColor:
+          backgroundColor ??
           (isSuccess ? Colors.green.shade600 : Colors.red.shade600),
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.all(16),
       duration: duration,
       elevation: 6,

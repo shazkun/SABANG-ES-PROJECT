@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:sabang_es/models/encryptor.dart';
+import 'package:sabang_es/util/encryptor.dart';
+import 'package:sabang_es/widgets/snackbar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -12,7 +13,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String? savedEmail;
   String? savedCode;
-  bool is24HourFormat = true; // Default to 24-hour format
 
   @override
   void initState() {
@@ -32,7 +32,11 @@ class _SettingsPageState extends State<SettingsPage> {
           savedCode = EncryptionHelper.decryptText(storedCode);
         } catch (e) {
           savedCode = '';
-          debugPrint('Failed to decrypt saved code: $e');
+          CustomSnackBar.show(
+            context,
+            'Failed to decrypt saved code.',
+            isSuccess: false,
+          );
         }
       }
     });
@@ -129,6 +133,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   horizontal: 20,
                   vertical: 16,
                 ),
+                errorText: null,
               ),
             ),
             actions: [
@@ -144,7 +149,36 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  onSave(controller.text.trim());
+                  final input = controller.text.trim();
+                  if (input.isEmpty) {
+                    CustomSnackBar.show(
+                      context,
+                      'Input cannot be empty.',
+                      isSuccess: false,
+                    );
+
+                    return;
+                  }
+                  if (!isCode && !_isValidEmail(input)) {
+                    CustomSnackBar.show(
+                      context,
+                      'Please enter a valid email address.',
+                      isSuccess: false,
+                    );
+
+                    return;
+                  }
+                  if (input.length < 16) {
+                    CustomSnackBar.show(
+                      context,
+                      'Code must be exactly 16 characters long.',
+                      isSuccess: false,
+                    );
+
+                    return;
+                  }
+
+                  onSave(input);
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
@@ -170,68 +204,22 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _saveData(String email, String code) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: const Text(
-              'Confirm',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            backgroundColor: const Color(0xFF1976D2),
-            content: const Text(
-              'Do you want to save this information?',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'No',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  final encryptedCode = EncryptionHelper.encryptText(code);
-                  await prefs.setString('email', email);
-                  await prefs.setString('code', encryptedCode);
-                  Navigator.pop(context); // Close confirm dialog
-                  await _loadSavedData();
-                  Navigator.pop(context); // Return to previous screen
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
-                  ),
-                ),
-                child: const Text(
-                  'Yes',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-    );
+  bool _isValidEmail(String email) {
+    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return regex.hasMatch(email);
+  }
+
+  Future<void> _saveData(String? email, String? code) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (email != null) {
+      await prefs.setString('email', email);
+    }
+    if (code != null) {
+      final encryptedCode = EncryptionHelper.encryptText(code);
+      await prefs.setString('code', encryptedCode);
+    }
+    await _loadSavedData();
+    CustomSnackBar.show(context, 'Data saved successfully.', isSuccess: true);
   }
 
   @override
@@ -284,9 +272,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           setState(() {
                             savedEmail = value;
                           });
-                          if (savedCode != null) {
-                            _saveData(value, savedCode!);
-                          }
+                          _saveData(value, null);
                         },
                       ),
                   style: ElevatedButton.styleFrom(
@@ -321,9 +307,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           setState(() {
                             savedCode = value;
                           });
-                          if (savedEmail != null) {
-                            _saveData(savedEmail!, value);
-                          }
+                          _saveData(null, value);
                         },
                       ),
                   style: ElevatedButton.styleFrom(
@@ -337,11 +321,60 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     minimumSize: const Size(double.infinity, 50),
                   ),
-                  child: Text(
-                    savedCode != null ? 'Code Set' : 'Set Code',
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        savedCode != null ? Icons.check_circle : Icons.cancel,
+                        color: savedCode != null ? Colors.green : Colors.red,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        savedCode != null ? 'Code Set' : 'Set Code',
+                        style: TextStyle(
+                          color:
+                              savedCode != null
+                                  ? Colors.black
+                                  : Colors.grey[700],
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('email');
+                    await prefs.remove('code');
+                    setState(() {
+                      savedEmail = null;
+                      savedCode = null;
+                    });
+                    CustomSnackBar.show(
+                      context,
+                      'Data cleared successfully.',
+                      isSuccess: true,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text(
+                    'Clear Data',
                     style: TextStyle(
-                      color:
-                          savedCode != null ? Colors.black : Colors.grey[700],
+                      color: Colors.white,
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
                     ),

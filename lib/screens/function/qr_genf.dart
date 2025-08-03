@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sabang_es/database/database_helper.dart';
 import 'package:sabang_es/models/qr_model.dart';
+import 'package:sabang_es/widgets/snackbar.dart';
 import 'package:uuid/uuid.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
@@ -117,8 +118,10 @@ class QRGenerateFunctions {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generated ${generatedQRs.length} QR codes')),
+      CustomSnackBar.show(
+        context,
+        'Generated ${generatedQRs.length} QR codes',
+        isSuccess: true,
       );
     } catch (e) {
       ScaffoldMessenger.of(
@@ -128,5 +131,4 @@ class QRGenerateFunctions {
 
     return generatedQRs;
   }
-  
 }

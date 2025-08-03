@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sabang_es/screens/function/qr_genf.dart';
+import 'package:sabang_es/widgets/snackbar.dart';
 
 class QRGenerateScreen extends StatefulWidget {
   const QRGenerateScreen({super.key});
@@ -108,13 +109,10 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                                   if (_formKey.currentState!.validate()) {
                                     await _functions.generateQR(context);
                                     setState(() {});
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'QR code generated successfully',
-                                        ),
-                                        backgroundColor: Colors.green,
-                                      ),
+                                    CustomSnackBar.show(
+                                      context,
+                                      'QR code generated successfully',
+                                      isSuccess: true,
                                     );
                                   }
                                 },

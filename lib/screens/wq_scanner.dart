@@ -4,11 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
-import 'package:sabang_es/database/database_helper.dart';
-import 'package:sabang_es/models/encryptor.dart';
-import 'package:sabang_es/models/qr_model.dart';
+import 'package:sabang_es/util/encryptor.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 class QRScannerPage extends StatefulWidget {
   const QRScannerPage({super.key});
@@ -84,15 +81,10 @@ class _QRScannerPageState extends State<QRScannerPage>
     try {
       await send(message, smtpServer);
     } catch (e) {
-      // await DatabaseHelper().insertQRLog(
-      //   QRModel(
-      //     id: const Uuid().v4(),
-      //     name: name,
-      //     email: 'email_error@error.com',
-      //     year: 'Email Failure: $e',
-      //   ),
-      // );
-      await _showDialog('Error', 'Failed to send email: $e');
+      await _showDialog(
+        'Error',
+        ' Email settings not found. Set them up to continue.',
+      );
     }
   }
 
@@ -156,9 +148,11 @@ class _QRScannerPageState extends State<QRScannerPage>
 
   Future<void> _processQRCode(String rawValue) async {
     final now = DateTime.now();
+
     if (_lastProcessed != null &&
-        now.difference(_lastProcessed!).inMilliseconds < 1000)
+        now.difference(_lastProcessed!).inMilliseconds < 1000) {
       return;
+    }
     _lastProcessed = now;
 
     try {
@@ -166,15 +160,6 @@ class _QRScannerPageState extends State<QRScannerPage>
       if (parts.isEmpty || parts[0].isEmpty) {
         throw const FormatException('Invalid QR code format');
       }
-
-      // await DatabaseHelper().insertQRLog(
-      //   QRModel(
-      //     id: const Uuid().v4(),
-      //     name: 'Raw Scan',
-      //     email: 'raw_scan@debug.com',
-      //     year: 'Raw Data: $rawValue',
-      //   ),
-      // );
 
       if (rawValue.isEmpty) {
         throw const FormatException('QR code contains no data');
@@ -190,26 +175,19 @@ class _QRScannerPageState extends State<QRScannerPage>
           parts[3].isEmpty) {
         throw const FormatException('QR code fields cannot be empty');
       }
+      if (savedCode!.isEmpty || savedEmail!.isEmpty) {
+        throw const FormatException(
+          'Email settings not found. Set them up to continue.',
+        );
+      }
 
       final name = parts[1];
       final email = parts[2];
-      final year = parts[3];
+      // final year = parts[3];
 
-      // await DatabaseHelper().insertQRLog(
-      //   QRModel(id: parts[0], name: name, email: email, year: year),
-      // );
-      // await _showDialog('Success', 'Email sent successfully to $email');
-      await _showDialog('Success', 'Time-in successful. Have a great day!');
       await _sendEmail(email, name);
+      await _showDialog('Success', 'Email sent successfully to $email');
     } catch (e) {
-      await DatabaseHelper().insertQRLog(
-        QRModel(
-          id: const Uuid().v4(),
-          name: 'Unknown',
-          email: 'scan_error@error.com',
-          year: 'Scan Error: $e',
-        ),
-      );
       await _showDialog('Invalid QR', 'Please scan a valid QR code.');
     }
   }
@@ -345,8 +323,8 @@ class _QRScannerPageState extends State<QRScannerPage>
               ),
               const SizedBox(height: 15),
               SizedBox(
-                width: 200, // Same width as the scanning button
-                height: 60, // Same height as the scanning button
+                width: 200,
+                height: 60,
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {

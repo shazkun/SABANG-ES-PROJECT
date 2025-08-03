@@ -10,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sabang_es/database/database_helper.dart';
 import 'package:sabang_es/models/qr_model.dart';
+import 'package:sabang_es/widgets/snackbar.dart';
 
 class QRListFunctions {
   final DatabaseHelper _dbHelper = DatabaseHelper();
@@ -64,9 +65,13 @@ class QRListFunctions {
 
   Future<void> generateQRTablePdf(BuildContext context) async {
     if (selectedQRs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one QR code')),
+      CustomSnackBar.show(
+        context,
+        'Please select at least one QR code',
+
+        isSuccess: false,
       );
+
       return;
     }
 
@@ -138,27 +143,32 @@ class QRListFunctions {
 
     await file.writeAsBytes(await pdf.save());
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('QR Code PDF saved to ${file.path}'),
-        backgroundColor: Colors.green,
-      ),
+    CustomSnackBar.show(
+      context,
+      'QR Code PDF saved to ${file.path}',
+      isSuccess: true,
     );
   }
 
   Future<void> generateQRImages(BuildContext context) async {
     if (selectedQRs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one QR code')),
+      CustomSnackBar.show(
+        context,
+        'Please select at least one QR code',
+        isSuccess: false,
       );
+
       return;
     }
 
     var status = await Permission.storage.request();
     if (!status.isGranted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Storage permission is required')),
+      CustomSnackBar.show(
+        context,
+        'Storage permission is required',
+        isSuccess: false,
       );
+
       return;
     }
 
@@ -200,13 +210,11 @@ class QRListFunctions {
       }
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Saved $successCount QR code${successCount != 1 ? 's' : ''} to /QR_Codes/. ${failCount > 0 ? '$failCount failed.' : ''}',
-        ),
-        backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
-      ),
+    CustomSnackBar.show(
+      context,
+      'Saved $successCount QR code${successCount != 1 ? 's' : ''} to /QR_Codes/. ${failCount > 0 ? '$failCount failed.' : ''}',
+      isSuccess: failCount == 0,
+      backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
     );
   }
 
@@ -215,11 +223,12 @@ class QRListFunctions {
     void Function(void Function()) setState,
   ) async {
     if (selectedQRs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one QR code to delete'),
-        ),
+      CustomSnackBar.show(
+        context,
+        'Please select at least one QR code to delete',
+        isSuccess: false,
       );
+
       return;
     }
 
@@ -284,22 +293,19 @@ class QRListFunctions {
                   });
 
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Deleted $successCount QR code${successCount != 1 ? 's' : ''} successfully. ${failCount > 0 ? '$failCount failed.' : ''}',
-                      ),
-                      backgroundColor:
-                          failCount > 0 ? Colors.orange : Colors.green,
-                    ),
+                  CustomSnackBar.show(
+                    context,
+                    'Deleted $successCount QR code${successCount != 1 ? 's' : ''} successfully. ${failCount > 0 ? '$failCount failed.' : ''}',
+                    isSuccess: failCount == 0,
+                    backgroundColor:
+                        failCount > 0 ? Colors.orange : Colors.green,
                   );
                 } catch (e) {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to delete QR codes: $e'),
-                      backgroundColor: Colors.red,
-                    ),
+                  CustomSnackBar.show(
+                    context,
+                    'Failed to delete QR codes: $e',
+                    isSuccess: false,
                   );
                 }
               },
@@ -419,19 +425,17 @@ class QRListFunctions {
                       });
                     });
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('QR code updated successfully'),
-                        backgroundColor: Colors.green,
-                      ),
+                    CustomSnackBar.show(
+                      context,
+                      'QR code updated successfully',
+                      isSuccess: true,
                     );
                   } catch (e) {
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to update QR code: $e'),
-                        backgroundColor: Colors.red,
-                      ),
+                    CustomSnackBar.show(
+                      context,
+                      'Failed to update QR code: $e',
+                      isSuccess: false,
                     );
                   }
                 }
@@ -500,19 +504,17 @@ class QRListFunctions {
                   });
 
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('QR code deleted successfully'),
-                      backgroundColor: Colors.green,
-                    ),
+                  CustomSnackBar.show(
+                    context,
+                    'QR code deleted successfully',
+                    isSuccess: true,
                   );
                 } catch (e) {
                   Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to delete QR code: $e'),
-                      backgroundColor: Colors.red,
-                    ),
+                  CustomSnackBar.show(
+                    context,
+                    'Failed to delete QR code: $e',
+                    isSuccess: false,
                   );
                 }
               },

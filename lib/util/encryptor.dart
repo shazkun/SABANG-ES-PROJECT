@@ -11,7 +11,6 @@ class EncryptionHelper {
   }
 
   static String decryptText(String encryptedText) {
-    print("Encrypted input: $encryptedText");
     final parts = encryptedText.split(':');
     if (parts.length != 2) {
       throw FormatException('Invalid encrypted text format: $encryptedText');
