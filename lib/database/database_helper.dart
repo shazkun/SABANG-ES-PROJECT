@@ -1,5 +1,6 @@
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+
 import '../models/qr_model.dart';
 
 class DatabaseHelper {
@@ -19,18 +20,23 @@ class DatabaseHelper {
     String path = join(await getDatabasesPath(), 'qr_manager.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // bump this to trigger onUpgrade
       onCreate: (db, version) async {
         await db.execute('''
-          CREATE TABLE qr_logs (
-            id TEXT PRIMARY KEY,
-            name TEXT,
-            email TEXT,
-            year TEXT
-          )
-        ''');
+        CREATE TABLE qr_logs (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          email TEXT,
+          year TEXT
+        )
+      ''');
       },
     );
+  }
+
+  Future<void> resetDatabase() async {
+    String path = join(await getDatabasesPath(), 'qr_manager.db');
+    await deleteDatabase(path);
   }
 
   Future<void> insertQRLog(QRModel qr) async {

@@ -28,7 +28,7 @@ class QRGenerateFunctions {
     yearController.dispose();
   }
 
-  Future<void> generateQR(BuildContext context) async {
+  Future<QRModel> generateQR() async {
     final qr = QRModel(
       id: const Uuid().v4(),
       name: nameController.text,
@@ -37,6 +37,7 @@ class QRGenerateFunctions {
     );
     await DatabaseHelper().insertQRLog(qr);
     qrModel = qr;
+    return qr;
   }
 
   String encodeQRData(QRModel qr) {

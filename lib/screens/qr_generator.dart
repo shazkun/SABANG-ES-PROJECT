@@ -107,8 +107,12 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                               child: ElevatedButton(
                                 onPressed: () async {
                                   if (_formKey.currentState!.validate()) {
-                                    await _functions.generateQR(context);
-                                    setState(() {});
+                                    final newQR = await _functions.generateQR();
+                                    setState(() {
+                                      _functions.qrModel =
+                                          newQR; // Updates QR for preview & details
+                                    });
+
                                     CustomSnackBar.show(
                                       context,
                                       'QR code generated successfully',

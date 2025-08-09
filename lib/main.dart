@@ -18,8 +18,9 @@ void main() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-  await DatabaseHelper().initDatabase();
 
+  // await DatabaseHelper().resetDatabase(); // Wipe old DB
+  await DatabaseHelper().initDatabase();
   runApp(const MyApp());
 }
 

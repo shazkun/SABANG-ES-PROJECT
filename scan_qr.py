@@ -4,6 +4,7 @@ import json
 import time
 import tkinter as tk
 from tkinter import ttk
+from PIL import Image, ImageTk
 
 
 def get_available_cameras(max_index=10):
@@ -17,138 +18,103 @@ def get_available_cameras(max_index=10):
     return available_cameras
 
 
-def on_camera_select(event):
-    """Callback for dropdown selection."""
-    global current_camera_index, camera_needs_update
-    selected = int(camera_var.get())
-    if selected in available_cameras and selected != current_camera_index:
-        current_camera_index = selected
-        camera_needs_update = True
+class QRScannerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("QR Scanner - Camera")
+        self.root.geometry("800x700")
+        self.root.configure(bg="#f5f5f5")
 
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("TLabel", background="#f5f5f5", font=("Segoe UI", 11))
+        style.configure("TButton", font=("Segoe UI", 10))
+        style.configure("TMenubutton", font=("Segoe UI", 10))
 
-def create_dropdown():
-    """Create tkinter window with camera dropdown."""
-    root = tk.Tk()
-    root.title("Camera Selection")
-    root.geometry("200x100")
+        # Camera selection
+        self.available_cameras = get_available_cameras()
+        if not self.available_cameras:
+            print(json.dumps({"error": "No cameras available"}))
+            self.root.destroy()
+            return
 
-    global camera_var
-    camera_var = tk.StringVar(root)
-    camera_var.set(str(current_camera_index))  # Default to first camera
+        self.current_camera_index = self.available_cameras[0]
+        self.cap = cv2.VideoCapture(self.current_camera_index)
 
-    label = tk.Label(root, text="Select Camera:")
-    label.pack(pady=10)
+        self.camera_var = tk.StringVar(value=str(self.current_camera_index))
+        ttk.Label(root, text="Select Camera:").pack(pady=5)
+        self.camera_dropdown = ttk.OptionMenu(
+            root,
+            self.camera_var,
+            str(self.current_camera_index),
+            *[str(i) for i in self.available_cameras],
+            command=self.on_camera_select,
+        )
+        self.camera_dropdown.pack(pady=5)
 
-    dropdown = ttk.OptionMenu(
-        root,
-        camera_var,
-        str(current_camera_index),
-        *[str(i) for i in available_cameras],
-        command=on_camera_select,
-    )
-    dropdown.pack(pady=10)
+        # Video display area
+        self.video_label = ttk.Label(root)
+        self.video_label.pack(pady=10)
 
-    return root
+        # Info label
+        self.info_label = ttk.Label(root, text="Scan a QR code...", foreground="#333")
+        self.info_label.pack(pady=5)
 
+        # Cooldown system
+        self.last_data = None
+        self.last_time = 0
+        self.cooldown_time = 20  # seconds
 
-def main():
-    global cap, current_camera_index, camera_needs_update, available_cameras
+        self.update_frame()
 
-    # Detect available cameras
-    available_cameras = get_available_cameras()
-    if not available_cameras:
-        print(json.dumps({"error": "No cameras available"}))
-        return
-    print(json.dumps({"info": f"Available camera indices: {available_cameras}"}))
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
-    # Initialize video capture with the first available camera
-    current_camera_index = available_cameras[0]
-    cap = cv2.VideoCapture(current_camera_index)
-    camera_needs_update = False
+    def on_camera_select(self, event):
+        selected = int(self.camera_var.get())
+        if selected in self.available_cameras and selected != self.current_camera_index:
+            self.cap.release()
+            self.current_camera_index = selected
+            self.cap = cv2.VideoCapture(self.current_camera_index)
 
-    if not cap.isOpened():
-        print(json.dumps({"error": f"Failed to open camera {current_camera_index}"}))
-        return
-
-    # Create tkinter dropdown
-    root = create_dropdown()
-
-    last_data = None
-    last_time = 0
-    cooldown_time = 20  # Cooldown in seconds
-
-    window_name = "Continuous QR Scanner - Press Q to quit"
-    cv2.namedWindow(window_name)
-
-    while True:
-        # Update tkinter events
-        root.update()
-
-        # Check if camera needs to be updated
-        if camera_needs_update:
-            cap.release()
-            cap = cv2.VideoCapture(current_camera_index)
-            if not cap.isOpened():
-                print(
-                    json.dumps(
-                        {"error": f"Failed to open camera {current_camera_index}"}
-                    )
-                )
-                cap = cv2.VideoCapture(available_cameras[0])  # Fallback to first camera
-                current_camera_index = available_cameras[0]
-                camera_var.set(str(current_camera_index))
-            camera_needs_update = False
-
-        ret, frame = cap.read()
+    def update_frame(self):
+        ret, frame = self.cap.read()
         if not ret:
-            print(
-                json.dumps(
-                    {
-                        "error": f"Failed to read frame from camera {current_camera_index}"
-                    }
-                )
-            )
-            time.sleep(0.1)  # Prevent CPU overload
-            continue
+            self.info_label.config(text=f"Failed to read from camera {self.current_camera_index}")
+            self.root.after(100, self.update_frame)
+            return
 
-        # Decode QR codes in the frame
         barcodes = decode(frame)
-
         current_time = time.time()
+
         for barcode in barcodes:
             qr_data = barcode.data.decode("utf-8")
-
-            # Check if enough time has passed since the last detected QR code
-            if qr_data != last_data or current_time - last_time >= cooldown_time:
-                last_data = qr_data
-                last_time = current_time
+            if qr_data != self.last_data or current_time - self.last_time >= self.cooldown_time:
+                self.last_data = qr_data
+                self.last_time = current_time
                 print(json.dumps({"result": qr_data}), flush=True)
+                self.info_label.config(text=f"QR Code: {qr_data}", foreground="green")
             else:
-                # Display cooldown timer
-                remaining_time = cooldown_time - (current_time - last_time)
+                remaining_time = self.cooldown_time - (current_time - self.last_time)
                 if remaining_time > 0:
-                    timer_text = f"Cooldown: {remaining_time:.1f}s"
-                    cv2.putText(
-                        frame,
-                        timer_text,
-                        (frame.shape[1] - 150, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (0, 0, 255),
-                        2,
-                    )
+                    self.info_label.config(text=f"Cooldown: {remaining_time:.1f}s", foreground="red")
 
-        # Display the frame
-        cv2.imshow(window_name, frame)
+        # Convert frame for Tkinter display
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img = Image.fromarray(frame_rgb)
+        img = img.resize((640, 480))
+        imgtk = ImageTk.PhotoImage(image=img)
+        self.video_label.imgtk = imgtk
+        self.video_label.config(image=imgtk)
 
-        # Check for 'q' key to quit
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        self.root.after(10, self.update_frame)
 
-    cap.release()
-    cv2.destroyAllWindows()
-    root.destroy()
+    def on_close(self):
+        if self.cap.isOpened():
+            self.cap.release()
+        self.root.destroy()
 
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = QRScannerApp(root)
+    root.mainloop()
