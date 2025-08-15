@@ -53,54 +53,10 @@ class _QRListScreenState extends State<QRListScreen> {
           'QR Code List',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        actions: [
-          if (_functions.selectedQRs.isNotEmpty) ...[
-            IconButton(
-              icon: Icon(
-                _selectAll ? Icons.deselect : Icons.select_all,
-                color: Colors.white,
-              ),
-              tooltip: _selectAll ? 'Deselect All' : 'Select All',
-              onPressed: () {
-                setState(() {
-                  _selectAll = !_selectAll;
-                  _functions.selectAll(_selectAll);
-                });
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.document_scanner, color: Colors.white),
-              tooltip: 'Export QR Images to PDF',
-              onPressed: () => _functions.generateQRTablePdf(context),
-            ),
-            IconButton(
-              icon: const Icon(Icons.image, color: Colors.white),
-              tooltip: 'Export QR Images',
-              onPressed: () => _functions.generateQRImages(context),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete_forever, color: Colors.white),
-              tooltip: 'Delete Selected QR Codes',
-              onPressed:
-                  () => _functions.deleteSelectedQRCodes(context, setState),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white),
-              tooltip: 'Clear Selection',
-              onPressed: () {
-                setState(() {
-                  _functions.selectAll(false);
-                  _selectAll = false;
-                });
-              },
-            ),
-          ],
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -116,151 +72,169 @@ class _QRListScreenState extends State<QRListScreen> {
               ),
             ),
           ),
-          Expanded(
-            child:
-                _functions.filteredQRCodes.isEmpty
-                    ? const Center(
-                      child: Text(
-                        'No QR codes found',
-                        style: TextStyle(
-                          color: Colors.black54,
+        ),
+      ),
+
+      // Main list
+      body:
+          _functions.filteredQRCodes.isEmpty
+              ? const Center(
+                child: Text(
+                  'No QR codes found',
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              )
+              : ListView.builder(
+                padding: const EdgeInsets.all(16.0),
+                itemCount: _functions.filteredQRCodes.length,
+                itemBuilder: (context, index) {
+                  final qr = _functions.filteredQRCodes[index];
+                  final isSelected = _functions.selectedQRs.contains(qr);
+
+                  return Card(
+                    color: isSelected ? Colors.blue[50] : Colors.white,
+                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ListTile(
+                      leading: Checkbox(
+                        value: isSelected,
+                        onChanged: (value) {
+                          setState(() {
+                            _functions.toggleSelection(qr);
+                            _selectAll =
+                                _functions.selectedQRs.length ==
+                                _functions.filteredQRCodes.length;
+                          });
+                        },
+                      ),
+                      title: Text(
+                        qr.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
                           fontSize: 16,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    )
-                    : ListView.builder(
-                      padding: const EdgeInsets.all(16.0),
-                      itemCount: _functions.filteredQRCodes.length,
-                      itemBuilder: (context, index) {
-                        final qr = _functions.filteredQRCodes[index];
-                        final isSelected = _functions.selectedQRs.contains(qr);
-                        return GestureDetector(
-                          onLongPress: () {
-                            setState(() {
-                              _functions.toggleSelection(qr);
-                              _selectAll =
-                                  _functions.selectedQRs.length ==
-                                  _functions.filteredQRCodes.length;
-                            });
-                          },
-                          onTap: () {
-                            if (_functions.selectedQRs.isNotEmpty) {
-                              setState(() {
-                                _functions.toggleSelection(qr);
-                                _selectAll =
-                                    _functions.selectedQRs.length ==
-                                    _functions.filteredQRCodes.length;
-                              });
-                            }
-                          },
-                          child: Card(
-                            color: isSelected ? Colors.blue[100] : Colors.white,
-                            elevation: 3,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12),
-                                      color: Colors.white,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: QrImageView(
-                                        data: _functions.encodeQRData(qr),
-                                        version: QrVersions.auto,
-                                        size: 80.0,
-                                        backgroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          qr.name,
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Email: ${qr.email}',
-                                          style: const TextStyle(
-                                            color: Colors.black54,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                        Text(
-                                          'Year: ${qr.year}',
-                                          style: const TextStyle(
-                                            color: Colors.black54,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Column(
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.blueAccent,
-                                        ),
-                                        onPressed:
-                                            () => _functions.showEditDialog(
-                                              context,
-                                              qr,
-                                              setState,
-                                            ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.redAccent,
-                                        ),
-                                        onPressed: () async {
-                                          await _functions.showDeleteDialog(
-                                            context,
-                                            qr,
-                                            setState,
-                                          );
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Email: ${qr.email}',
+                            style: const TextStyle(fontSize: 14),
                           ),
-                        );
-                      },
+                          Text(
+                            'Year: ${qr.year}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.edit,
+                              color: Colors.blueAccent,
+                            ),
+                            onPressed:
+                                () => _functions.showEditDialog(
+                                  context,
+                                  qr,
+                                  setState,
+                                ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete,
+                              color: Colors.redAccent,
+                            ),
+                            onPressed: () async {
+                              await _functions.showDeleteDialog(
+                                context,
+                                qr,
+                                setState,
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-          ),
-        ],
-      ),
+                  );
+                },
+              ),
+
+      // Bottom bar for batch actions
+      bottomNavigationBar:
+          _functions.selectedQRs.isNotEmpty
+              ? BottomAppBar(
+                color: Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _selectAll ? Icons.deselect : Icons.select_all,
+                          color: Colors.blue,
+                        ),
+                        tooltip: _selectAll ? 'Deselect All' : 'Select All',
+                        onPressed: () {
+                          setState(() {
+                            _selectAll = !_selectAll;
+                            _functions.selectAll(_selectAll);
+                          });
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.document_scanner,
+                          color: Colors.blue,
+                        ),
+                        tooltip: 'Export PDF',
+                        onPressed: () => _functions.generateQRTablePdf(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.image, color: Colors.blue),
+                        tooltip: 'Export Images',
+                        onPressed: () => _functions.generateQRImages(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                        ),
+                        tooltip: 'Delete Selected',
+                        onPressed:
+                            () => _functions.deleteSelectedQRCodes(
+                              context,
+                              setState,
+                            ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.grey),
+                        tooltip: 'Clear Selection',
+                        onPressed: () {
+                          setState(() {
+                            _functions.selectAll(false);
+                            _selectAll = false;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              : null,
     );
   }
 }

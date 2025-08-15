@@ -14,6 +14,8 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
   final QRGenerateFunctions _functions = QRGenerateFunctions();
   final _formKey = GlobalKey<FormState>();
 
+  String? _lastGeneratedData;
+
   @override
   void initState() {
     super.initState();
@@ -24,6 +26,62 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
   void dispose() {
     _functions.dispose();
     super.dispose();
+  }
+
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Enter name';
+    if (value.trim().length < 2) return 'Name too short';
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Enter email';
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
+    if (!emailRegex.hasMatch(value.trim())) return 'Invalid email format';
+    return null;
+  }
+
+  String? _validateYear(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Enter S.Y.';
+    final yearRegex = RegExp(r'^\d{4}-\d{4}$'); // e.g., 2024-2025
+    if (!yearRegex.hasMatch(value.trim())) return 'Format: YYYY-YYYY';
+    return null;
+  }
+
+  Future<void> _handleGenerateQR() async {
+    if (_formKey.currentState!.validate()) {
+      final name = _functions.nameController.text.trim();
+      final email = _functions.emailController.text.trim();
+      final year = _functions.yearController.text.trim();
+
+      final qrData = '$name|$email|$year';
+      if (qrData == _lastGeneratedData) {
+        CustomSnackBar.show(
+          context,
+          'This QR code was already generated',
+          isSuccess: false,
+        );
+        return;
+      }
+
+      final newQR = await _functions.generateQR();
+      setState(() {
+        _functions.qrModel = newQR;
+        _lastGeneratedData = qrData;
+      });
+
+      CustomSnackBar.show(
+        context,
+        'QR code generated successfully',
+        isSuccess: true,
+      );
+    } else {
+      CustomSnackBar.show(
+        context,
+        'Please fix form errors before generating',
+        isSuccess: false,
+      );
+    }
   }
 
   @override
@@ -58,77 +116,28 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                       children: [
                         TextFormField(
                           controller: _functions.nameController,
-                          decoration: InputDecoration(
-                            labelText: 'Name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                          ),
-                          validator:
-                              (value) => value!.isEmpty ? 'Enter name' : null,
+                          decoration: _inputDecoration('Name'),
+                          validator: _validateName,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _functions.emailController,
-                          decoration: InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                          ),
-                          validator:
-                              (value) => value!.isEmpty ? 'Enter email' : null,
+                          decoration: _inputDecoration('Email'),
+                          validator: _validateEmail,
                         ),
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _functions.yearController,
-                          decoration: InputDecoration(
-                            labelText: 'School Year',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                          ),
-                          validator:
-                              (value) => value!.isEmpty ? 'Enter S.Y' : null,
+                          decoration: _inputDecoration('School Year'),
+                          validator: _validateYear,
                         ),
-
                         const SizedBox(height: 16),
-
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () async {
-                                  if (_formKey.currentState!.validate()) {
-                                    final newQR = await _functions.generateQR();
-                                    setState(() {
-                                      _functions.qrModel =
-                                          newQR; // Updates QR for preview & details
-                                    });
-
-                                    CustomSnackBar.show(
-                                      context,
-                                      'QR code generated successfully',
-                                      isSuccess: true,
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
+                                onPressed: _handleGenerateQR,
+                                style: _buttonStyle(Colors.blueAccent),
                                 child: const Text(
                                   'Generate QR',
                                   style: TextStyle(
@@ -144,16 +153,13 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   _functions.generateBatchQR(context);
+                                  CustomSnackBar.show(
+                                    context,
+                                    'Batch QR generation started',
+                                    isSuccess: true,
+                                  );
                                 },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                ),
+                                style: _buttonStyle(Colors.blue),
                                 child: const Text(
                                   'Batch Generate',
                                   style: TextStyle(
@@ -172,107 +178,111 @@ class _QRGenerateScreenState extends State<QRGenerateScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Card(
-                elevation: 3,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child:
-                              _functions.qrModel != null
-                                  ? QrImageView(
-                                    data: _functions.encodeQRData(
-                                      _functions.qrModel!,
-                                    ),
-                                    version: QrVersions.auto,
-                                    size: 120.0,
-                                    backgroundColor: Colors.white,
-                                  )
-                                  : Container(
-                                    width: 120.0,
-                                    height: 120.0,
-                                    color: Colors.grey[200],
-                                    child: const Icon(
-                                      Icons.question_mark,
-                                      size: 60,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Details',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _functions.qrModel != null
-                                  ? 'Name: ${_functions.qrModel!.name}'
-                                  : 'Name: -',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _functions.qrModel != null
-                                  ? 'Email: ${_functions.qrModel!.email}'
-                                  : 'Email: -',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              _functions.qrModel != null
-                                  ? 'Grade: ${_functions.qrModel!.year}'
-                                  : 'Grade: -',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildQRPreview(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      filled: true,
+      fillColor: Colors.grey[50],
+    );
+  }
+
+  ButtonStyle _buttonStyle(Color color) {
+    return ElevatedButton.styleFrom(
+      backgroundColor: color,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(vertical: 16),
+    );
+  }
+
+  Widget _buildQRPreview() {
+    return Card(
+      elevation: 3,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [_qrImage(), const SizedBox(width: 16), _qrDetails()],
+        ),
+      ),
+    );
+  }
+
+  Widget _qrImage() {
+    return Container(
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child:
+            _functions.qrModel != null
+                ? QrImageView(
+                  data: _functions.encodeQRData(_functions.qrModel!),
+                  version: QrVersions.auto,
+                  size: 120.0,
+                  backgroundColor: Colors.white,
+                )
+                : Container(
+                  width: 120.0,
+                  height: 120.0,
+                  color: Colors.grey[200],
+                  child: const Icon(
+                    Icons.question_mark,
+                    size: 60,
+                    color: Colors.grey,
+                  ),
+                ),
+      ),
+    );
+  }
+
+  Widget _qrDetails() {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Details',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _detailLine('Name', _functions.qrModel?.name),
+          const SizedBox(height: 8),
+          _detailLine('Email', _functions.qrModel?.email),
+          const SizedBox(height: 8),
+          _detailLine('Grade', _functions.qrModel?.year),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailLine(String label, String? value) {
+    return Text(
+      '$label: ${value ?? '-'}',
+      style: const TextStyle(fontSize: 14, color: Colors.black54),
     );
   }
 }

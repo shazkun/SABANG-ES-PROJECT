@@ -52,6 +52,7 @@ class QRGenerateFunctions {
       version: QrVersions.auto,
       size: 200.0,
       backgroundColor: Colors.transparent, // Ensure transparent background
+      // ignore: deprecated_member_use
       foregroundColor: Colors.black, // High contrast for readability
       padding: const EdgeInsets.all(10.0),
     );
