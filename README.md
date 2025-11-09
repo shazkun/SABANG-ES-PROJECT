@@ -1,4 +1,16 @@
+## 📦 Download
 
+You can download the latest release of **SABANG-ES-PROJECT v1.0.0** from the link below:
+
+➡️ [**Download SABANG-ES-PROJECT v1.0.0**](https://github.com/shazkun/SABANG-ES-PROJECT/releases/tag/v1.0.0)
+
+---
+
+### 🧩 How to Install
+1. Go to the [releases page](https://github.com/shazkun/SABANG-ES-PROJECT/releases).
+2. Find **v1.0.0** and click on **Assets**.
+3. Download the `.zip` or `.bin` file you need.
+4. Follow the instructions in the documentation to install.
 
 ---
 
